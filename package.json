@@ -1,0 +1,11 @@
+{
+  "name": "public-jukebox",
+  "version": "2.0.0",
+  "description": "多人实时在线点歌台",
+  "main": "app.js",
+  "scripts": { "start": "node app.js" },
+  "dependencies": {
+    "express": "^4.18.2",
+    "socket.io": "^4.7.2"
+  }
+}

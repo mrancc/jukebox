@@ -1,0 +1,1205 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>🎵 公共点歌台</title>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Orbitron:wght@700;900&display=swap"
+    rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #0a0c14;
+      --surface: #111420;
+      --surface2: #181c2e;
+      --border: #1f2540;
+      --accent: #7c5cfc;
+      --accent2: #fc5c7d;
+      --accent3: #43e97b;
+      --text: #e8eaf6;
+      --text2: #8b90b8;
+      --glow: 0 0 20px rgba(124, 92, 252, 0.4);
+      --r: 12px;
+      --t: .25s ease;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Noto Sans SC', sans-serif;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      background: radial-gradient(ellipse 60% 50% at 10% 20%, rgba(124, 92, 252, .12) 0%, transparent 60%),
+        radial-gradient(ellipse 50% 40% at 90% 80%, rgba(252, 92, 125, .1) 0%, transparent 60%);
+      pointer-events: none;
+    }
+
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(10, 12, 20, .9);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border);
+      padding: 12px 20px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .logo {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 1.2rem;
+      font-weight: 900;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .hstatus {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: .78rem;
+      color: var(--text2);
+      margin-left: auto;
+    }
+
+    .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--accent3);
+      box-shadow: 0 0 8px var(--accent3);
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+
+      0%,
+      100% {
+        opacity: 1
+      }
+
+      50% {
+        opacity: .4
+      }
+    }
+
+    .btn-hdr {
+      background: none;
+      border: 1px solid var(--border);
+      color: var(--text2);
+      border-radius: 6px;
+      padding: 5px 12px;
+      font-size: .78rem;
+      cursor: pointer;
+      transition: var(--t);
+      font-family: inherit;
+    }
+
+    .btn-hdr:hover,
+    .btn-hdr.on {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    main {
+      position: relative;
+      z-index: 1;
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 20px 16px 130px;
+      display: grid;
+      grid-template-columns: 1fr 380px;
+      gap: 20px;
+    }
+
+    @media(max-width:768px) {
+      main {
+        grid-template-columns: 1fr;
+        padding-bottom: 210px;
+      }
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--r);
+      overflow: hidden;
+    }
+
+    .ch {
+      padding: 14px 18px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: .82rem;
+      font-weight: 500;
+      color: var(--text2);
+      letter-spacing: .05em;
+      text-transform: uppercase;
+    }
+
+    .ch-l {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .nk-row {
+      padding: 10px 16px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: .82rem;
+      color: var(--text2);
+    }
+
+    .nk-inp {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 5px 10px;
+      color: var(--text);
+      font-size: .82rem;
+      font-family: inherit;
+      outline: none;
+      width: 110px;
+      transition: var(--t);
+    }
+
+    .nk-inp:focus {
+      border-color: var(--accent);
+    }
+
+    .src-row {
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      gap: 8px;
+    }
+
+    .src-inp {
+      flex: 1;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 14px;
+      color: var(--text);
+      font-size: .9rem;
+      font-family: inherit;
+      outline: none;
+      transition: var(--t);
+    }
+
+    .src-inp:focus {
+      border-color: var(--accent);
+      box-shadow: var(--glow);
+    }
+
+    .src-inp::placeholder {
+      color: var(--text2);
+    }
+
+    .btn {
+      border: none;
+      border-radius: 8px;
+      padding: 10px 18px;
+      font-size: .85rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: var(--t);
+      font-family: inherit;
+      white-space: nowrap;
+    }
+
+    .btn-p {
+      background: var(--accent);
+      color: #fff;
+    }
+
+    .btn-p:hover {
+      background: #9370ff;
+      box-shadow: var(--glow);
+    }
+
+    .btn-d {
+      background: rgba(252, 92, 125, .15);
+      color: var(--accent2);
+      border: 1px solid rgba(252, 92, 125, .3);
+    }
+
+    .btn-d:hover {
+      background: rgba(252, 92, 125, .25);
+    }
+
+    .btn-sm {
+      padding: 5px 10px;
+      font-size: .75rem;
+    }
+
+    #search-results {
+      max-height: 360px;
+      overflow-y: auto;
+    }
+
+    .si {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 14px;
+      border-bottom: 1px solid var(--border);
+      transition: var(--t);
+    }
+
+    .si:last-child {
+      border-bottom: none;
+    }
+
+    .si:hover {
+      background: var(--surface2);
+    }
+
+    .scover {
+      width: 42px;
+      height: 42px;
+      border-radius: 6px;
+      object-fit: cover;
+      background: var(--surface2);
+      flex-shrink: 0;
+    }
+
+    .scover-ph {
+      width: 42px;
+      height: 42px;
+      border-radius: 6px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.2rem;
+      flex-shrink: 0;
+    }
+
+    .sinfo {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .sname {
+      font-size: .88rem;
+      font-weight: 500;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .smeta {
+      font-size: .74rem;
+      color: var(--text2);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .sdur {
+      font-size: .74rem;
+      color: var(--text2);
+      flex-shrink: 0;
+    }
+
+    .btn-add {
+      background: rgba(124, 92, 252, .15);
+      border: 1px solid rgba(124, 92, 252, .3);
+      color: var(--accent);
+      border-radius: 6px;
+      padding: 5px 12px;
+      font-size: .78rem;
+      cursor: pointer;
+      transition: var(--t);
+      flex-shrink: 0;
+    }
+
+    .btn-add:hover {
+      background: rgba(124, 92, 252, .3);
+    }
+
+    .btn-add:disabled {
+      opacity: .5;
+      cursor: not-allowed;
+    }
+
+    .tip {
+      text-align: center;
+      padding: 28px;
+      color: var(--text2);
+      font-size: .85rem;
+    }
+
+    .spin {
+      width: 22px;
+      height: 22px;
+      border: 2px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin .8s linear infinite;
+      margin: 0 auto 8px;
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg)
+      }
+    }
+
+    #queue-list {
+      max-height: 490px;
+      overflow-y: auto;
+    }
+
+    .qi {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 14px;
+      border-bottom: 1px solid var(--border);
+      transition: var(--t);
+    }
+
+    .qi:last-child {
+      border-bottom: none;
+    }
+
+    .qi.cur {
+      background: rgba(124, 92, 252, .1);
+      border-left: 3px solid var(--accent);
+    }
+
+    .qnum {
+      width: 18px;
+      text-align: center;
+      font-size: .74rem;
+      color: var(--text2);
+      flex-shrink: 0;
+    }
+
+    .qnum.play {
+      color: var(--accent);
+    }
+
+    .qcover {
+      width: 36px;
+      height: 36px;
+      border-radius: 5px;
+      object-fit: cover;
+      background: var(--surface2);
+      flex-shrink: 0;
+    }
+
+    .qcover-ph {
+      width: 36px;
+      height: 36px;
+      border-radius: 5px;
+      background: var(--surface2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: .9rem;
+      flex-shrink: 0;
+    }
+
+    .qinfo {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .qname {
+      font-size: .83rem;
+      font-weight: 500;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .qsub {
+      font-size: .71rem;
+      color: var(--text2);
+    }
+
+    .qreq {
+      font-size: .7rem;
+      color: var(--accent);
+      background: rgba(124, 92, 252, .1);
+      border-radius: 4px;
+      padding: 1px 6px;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    .btn-del {
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: var(--text2);
+      font-size: .88rem;
+      padding: 4px;
+      border-radius: 4px;
+      transition: var(--t);
+      flex-shrink: 0;
+      display: none;
+    }
+
+    .adm .btn-del {
+      display: block;
+    }
+
+    .btn-del:hover {
+      color: var(--accent2);
+    }
+
+    .qempty {
+      padding: 48px 20px;
+      text-align: center;
+      color: var(--text2);
+      font-size: .85rem;
+    }
+
+    .qempty .bi {
+      font-size: 3rem;
+      margin-bottom: 12px;
+    }
+
+    #pbar {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      z-index: 200;
+      background: rgba(10, 12, 20, .96);
+      backdrop-filter: blur(24px);
+      border-top: 1px solid var(--border);
+      padding: 12px 20px;
+    }
+
+    .pi {
+      max-width: 1100px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .pcover {
+      width: 50px;
+      height: 50px;
+      border-radius: 8px;
+      object-fit: cover;
+      background: var(--surface2);
+      flex-shrink: 0;
+      border: 1px solid var(--border);
+    }
+
+    .pinfo {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .pname {
+      font-size: .88rem;
+      font-weight: 500;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .partist {
+      font-size: .74rem;
+      color: var(--text2);
+    }
+
+    .pctrl {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-shrink: 0;
+    }
+
+    .cbtn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: var(--text2);
+      font-size: 1.15rem;
+      padding: 6px;
+      border-radius: 50%;
+      transition: var(--t);
+      width: 34px;
+      height: 34px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .cbtn:hover {
+      color: var(--accent);
+    }
+
+    .cbtn.pbtn {
+      background: var(--accent);
+      color: #fff;
+      font-size: .95rem;
+      box-shadow: var(--glow);
+    }
+
+    .cbtn.pbtn:hover {
+      background: #9370ff;
+    }
+
+    .cbtn.ao {
+      display: none;
+    }
+
+    .adm .cbtn.ao {
+      display: flex;
+    }
+
+    .pw {
+      flex: 1;
+      max-width: 380px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .pt {
+      font-size: .72rem;
+      color: var(--text2);
+      flex-shrink: 0;
+    }
+
+    .pb {
+      flex: 1;
+      height: 4px;
+      background: var(--surface2);
+      border-radius: 4px;
+      overflow: hidden;
+      cursor: pointer;
+    }
+
+    .pf {
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+      transition: width .5s linear;
+      width: 0%;
+    }
+
+    .vol-wrap {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-shrink: 0;
+    }
+
+    .vol-icon {
+      cursor: pointer;
+      font-size: 1.05rem;
+      color: var(--text2);
+      transition: var(--t);
+      user-select: none;
+      line-height: 1;
+    }
+
+    .vol-icon:hover {
+      color: var(--accent);
+    }
+
+    .vol-slider {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 80px;
+      height: 4px;
+      background: var(--surface2);
+      border-radius: 4px;
+      outline: none;
+      cursor: pointer;
+      transition: var(--t);
+    }
+
+    .vol-slider:hover {
+      background: var(--border);
+    }
+
+    .vol-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: var(--accent);
+      cursor: pointer;
+      box-shadow: 0 0 6px rgba(124, 92, 252, .5);
+      transition: var(--t);
+    }
+
+    .vol-slider::-webkit-slider-thumb:hover {
+      background: #9370ff;
+      transform: scale(1.15);
+    }
+
+    .vol-slider::-moz-range-thumb {
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: var(--accent);
+      cursor: pointer;
+      border: none;
+    }
+
+    @media(max-width:600px) {
+      .pw {
+        display: none;
+      }
+
+      .pi {
+        gap: 8px;
+      }
+
+      .vol-slider {
+        width: 60px;
+      }
+    }
+
+    #tw {
+      position: fixed;
+      top: 70px;
+      right: 16px;
+      z-index: 999;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      pointer-events: none;
+    }
+
+    .toast {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 16px;
+      font-size: .82rem;
+      max-width: 280px;
+      animation: tin .3s ease;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, .4);
+    }
+
+    .toast.success {
+      border-left: 3px solid var(--accent3);
+    }
+
+    .toast.error {
+      border-left: 3px solid var(--accent2);
+    }
+
+    .toast.info {
+      border-left: 3px solid var(--accent);
+    }
+
+    .toast.warning {
+      border-left: 3px solid #fbbf24;
+    }
+
+    @keyframes tin {
+      from {
+        opacity: 0;
+        transform: translateX(20px)
+      }
+
+      to {
+        opacity: 1;
+        transform: none
+      }
+    }
+
+    .ov {
+      position: fixed;
+      inset: 0;
+      z-index: 500;
+      background: rgba(0, 0, 0, .6);
+      backdrop-filter: blur(6px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .mb {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--r);
+      padding: 28px;
+      width: 100%;
+      max-width: 340px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, .5);
+    }
+
+    .mb h3 {
+      margin-bottom: 16px;
+      font-size: 1rem;
+    }
+
+    .mi {
+      width: 100%;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 14px;
+      color: var(--text);
+      font-family: inherit;
+      font-size: .9rem;
+      outline: none;
+      margin-bottom: 12px;
+      transition: var(--t);
+    }
+
+    .mi:focus {
+      border-color: var(--accent);
+    }
+
+    .ma {
+      display: flex;
+      gap: 8px;
+      justify-content: flex-end;
+    }
+
+    .btn-g {
+      background: none;
+      border: 1px solid var(--border);
+      color: var(--text2);
+      border-radius: 8px;
+      padding: 8px 16px;
+      font-size: .85rem;
+      cursor: pointer;
+      transition: var(--t);
+      font-family: inherit;
+    }
+
+    .btn-g:hover {
+      border-color: var(--text2);
+      color: var(--text);
+    }
+
+    ::-webkit-scrollbar {
+      width: 4px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: var(--border);
+      border-radius: 4px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: var(--accent);
+    }
+  </style>
+</head>
+
+<body>
+
+  <header>
+    <div class="logo">🎵 点歌台</div>
+    <div class="hstatus">
+      <div class="dot"></div>
+      <span id="oc">1</span> 人在线
+      <button class="btn-hdr" id="btn-adm" onclick="openAdminModal()">管理员</button>
+      <button class="btn-hdr on" id="btn-logout" onclick="adminLogout()" style="display:none">退出管理</button>
+    </div>
+  </header>
+
+  <main>
+    <div>
+      <div class="card">
+        <div class="ch">
+          <div class="ch-l"><span>🔍</span> 搜索点歌</div>
+        </div>
+        <div class="nk-row">昵称：<input class="nk-inp" id="nk" placeholder="输入昵称" maxlength="12" /></div>
+        <div class="src-row">
+          <input class="src-inp" id="si" placeholder="输入歌名 / 歌手名…" autocomplete="off" />
+          <button class="btn btn-p" onclick="doSearch()" id="btn-search">搜 索</button>
+        </div>
+        <div id="search-results">
+          <div class="tip">搜索歌曲后在这里点歌 🎶</div>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <div class="card">
+        <div class="ch">
+          <div class="ch-l"><span>📋</span> 播放队列
+            <span id="qc"
+              style="background:var(--surface2);border-radius:12px;padding:1px 8px;font-size:.75rem;">0</span>
+          </div>
+          <button class="btn btn-d btn-sm ao" onclick="clearQueue()" style="display:none">清空</button>
+        </div>
+        <div id="queue-list">
+          <div class="qempty">
+            <div class="bi">🎧</div>队列空空如也<br />快去搜索点歌吧！
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <div id="pbar">
+    <div class="pi">
+      <img id="pc" class="pcover" src="" alt="封面"
+        onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 50 50%22><rect width=%2250%22 height=%2250%22 fill=%22%23181c2e%22/><text x=%2225%22 y=%2232%22 text-anchor=%22middle%22 font-size=%2222%22>🎵</text></svg>'" />
+      <div class="pinfo">
+        <div class="pname" id="pn">暂无播放</div>
+        <div class="partist" id="pa">—</div>
+      </div>
+      <div class="pw">
+        <span class="pt" id="tc">0:00</span>
+        <div class="pb" onclick="seekTo(event)">
+          <div class="pf" id="pf"></div>
+        </div>
+        <span class="pt" id="tt">0:00</span>
+      </div>
+      <div class="pctrl">
+        <div class="vol-wrap">
+          <span class="vol-icon" id="vol-icon" onclick="toggleMute()">🔊</span>
+          <input type="range" class="vol-slider" id="vol-slider" min="0" max="100" value="80" oninput="setVolume(this.value)" />
+        </div>
+        <button class="cbtn pbtn ao" id="btn-play" onclick="togglePlay()">▶</button>
+        <button class="cbtn ao" onclick="nextSong()">⏭</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="tw"></div>
+
+  <div class="ov" id="adm-modal" style="display:none" onclick="if(event.target===this)closeAdminModal()">
+    <div class="mb">
+      <h3>🔐 管理员验证</h3>
+      <input class="mi" id="apwd" type="password" placeholder="输入管理员密码"
+        onkeydown="if(event.key==='Enter')submitAdmin()" />
+      <div class="ma">
+        <button class="btn-g" onclick="closeAdminModal()">取消</button>
+        <button class="btn btn-p" onclick="submitAdmin()">确认</button>
+      </div>
+    </div>
+  </div>
+
+  <audio id="ap" preload="auto"></audio>
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    // ── 所有 API 调用走本地服务器（app.js 代理）──────────────────
+    async function apiSearch(q) {
+      const r = await fetch(`/api/search?q=${encodeURIComponent(q)}&limit=20`);
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      return r.json();
+    }
+    async function apiSongUrl(id, source) {
+      const r = await fetch(`/api/song/url?id=${id}&source=${source || 'netease'}`);
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      return r.json();
+    }
+
+    // ── Socket.io & 状态 ─────────────────────────────────────────
+    let isAdmin = false;
+    let state = { queue: [], currentIndex: -1, isPlaying: false, currentTime: 0 };
+    let masterTimer = null;
+    const socket = io();
+
+    socket.on('connect', () => { if (!masterTimer) startMaster(); });
+    socket.on('state_sync', onStateSync);
+    socket.on('time_sync', ({ time }) => {
+      const a = document.getElementById('ap');
+      if (Math.abs(a.currentTime - time) > 3) a.currentTime = time;
+    });
+    socket.on('online_users', n => { document.getElementById('oc').textContent = n; });
+    socket.on('toast', ({ msg, type }) => toast(msg, type));
+
+    function onStateSync(s) {
+      const prevIdx = state.currentIndex;
+      const prevQueue = state.queue;
+      state = s;
+      renderQueue();
+      updatePlayerUI();
+
+      const a = document.getElementById('ap');
+      const cur = s.queue[s.currentIndex];
+
+      if (s.currentIndex !== prevIdx) {
+        // 切歌
+        if (cur && cur.url) {
+          a.src = cur.url;
+          a.currentTime = s.currentTime || 0;
+          if (s.isPlaying) a.play().catch(() => { });
+        } else { a.src = ''; a.pause(); }
+        return;
+      }
+      if (s.isPlaying && a.paused && cur) a.play().catch(() => { });
+      else if (!s.isPlaying && !a.paused) a.pause();
+    }
+
+    function startMaster() {
+      masterTimer = setInterval(() => {
+        const cur = state.queue[state.currentIndex];
+        if (cur) socket.emit('report_time', { uid: cur.uid, time: document.getElementById('ap').currentTime });
+      }, 3000);
+    }
+
+    // ── 搜索 ─────────────────────────────────────────────────────
+    document.getElementById('si').addEventListener('keydown', e => { if (e.key === 'Enter') doSearch(); });
+
+    async function doSearch() {
+      const q = document.getElementById('si').value.trim();
+      if (!q) return;
+      const box = document.getElementById('search-results');
+      const sbtn = document.getElementById('btn-search');
+      box.innerHTML = '<div class="tip"><div class="spin"></div>搜索中…</div>';
+      sbtn.disabled = true;
+
+      try {
+        const data = await apiSearch(q);
+        renderResults(data.songs || []);
+        if (data.error) toast('⚠️ ' + data.error, 'warning');
+      } catch (e) {
+        box.innerHTML = `<div class="tip">搜索失败：${esc(e.message)}<br/><small>请检查网络连接后重试</small></div>`;
+      } finally {
+        sbtn.disabled = false;
+      }
+    }
+
+    // 存储搜索结果
+    let searchResults = [];
+
+    function renderResults(songs) {
+      searchResults = songs;
+      const box = document.getElementById('search-results');
+      if (!songs.length) {
+        box.innerHTML = '<div class="tip">没有找到相关歌曲，换个关键词试试 🎵</div>';
+        return;
+      }
+      box.innerHTML = songs.map((s, i) => `
+    <div class="si">
+      ${s.cover
+          ? `<img class="scover" src="${s.cover}" onerror="this.outerHTML='<div class=scover-ph>🎵</div>'" alt="">`
+          : `<div class="scover-ph">🎵</div>`}
+      <div class="sinfo">
+        <div class="sname">${esc(s.name)}${s.needPay ? ' <span style="font-size:.68rem;color:#fbbf24;background:rgba(251,191,36,.12);border-radius:3px;padding:1px 5px;">VIP</span>' : ''}</div>
+        <div class="smeta">${esc(s.artist)}${s.album ? ' · ' + esc(s.album) : ''}</div>
+      </div>
+      ${s.duration ? `<div class="sdur">${fmt(s.duration)}</div>` : ''}
+      <button class="btn-add" id="addbtn-${i}" onclick="addSong(${i})">＋ 点歌</button>
+    </div>
+  `).join('');
+    }
+
+    async function addSong(idx) {
+      const song = searchResults[idx];
+      if (!song) return;
+      const btn = document.getElementById('addbtn-' + idx);
+      btn.disabled = true; btn.textContent = '获取中…';
+
+      try {
+        const { url } = await apiSongUrl(song.id, song.source);
+        if (!url) throw new Error('无法获取播放链接');
+        const nickname = document.getElementById('nk').value.trim() || '匿名';
+        socket.emit('add_song', { song: { ...song, url }, nickname });
+        btn.textContent = '✓ 已点';
+      } catch (e) {
+        console.log(JSON.stringify(e.message))
+        toast('点歌失败：' + e.message, 'error');
+        btn.disabled = false; btn.textContent = '＋ 点歌';
+      }
+    }
+
+    // ── 队列渲染 ─────────────────────────────────────────────────
+    function renderQueue() {
+      const list = document.getElementById('queue-list');
+      document.getElementById('qc').textContent = state.queue.length;
+      if (!state.queue.length) {
+        list.innerHTML = '<div class="qempty"><div class="bi">🎧</div>队列空空如也<br/>快去搜索点歌吧！</div>';
+        return;
+      }
+      list.innerHTML = state.queue.map((s, i) => {
+        const cur = i === state.currentIndex;
+        return `<div class="qi ${cur ? 'cur' : ''}">
+      <div class="qnum ${cur && state.isPlaying ? 'play' : ''}">${cur ? '♫' : i + 1}</div>
+      ${s.cover
+            ? `<img class="qcover" src="${s.cover}" onerror="this.outerHTML='<div class=qcover-ph>🎵</div>'" alt="">`
+            : `<div class="qcover-ph">🎵</div>`}
+      <div class="qinfo"><div class="qname">${esc(s.name)}</div><div class="qsub">${esc(s.artist)}</div></div>
+      <span class="qreq">${esc(s.requester)}</span>
+      <button class="btn-del" onclick="removeSong(${s.uid})">✕</button>
+    </div>`;
+      }).join('');
+      const curEl = list.querySelector('.cur');
+      if (curEl) curEl.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    }
+
+    // ── 播放器 UI ────────────────────────────────────────────────
+    function updatePlayerUI() {
+      const cur = state.queue[state.currentIndex];
+      document.getElementById('btn-play').textContent = state.isPlaying ? '⏸' : '▶';
+      if (cur) {
+        document.getElementById('pn').textContent = cur.name;
+        document.getElementById('pa').textContent = cur.artist;
+        document.getElementById('pc').src = cur.cover || '';
+        document.getElementById('tt').textContent = cur.duration ? fmt(cur.duration) : '–';
+      } else {
+        document.getElementById('pn').textContent = '暂无播放';
+        document.getElementById('pa').textContent = '—';
+        document.getElementById('pc').src = '';
+        document.getElementById('pf').style.width = '0%';
+        document.getElementById('tc').textContent = '0:00';
+        document.getElementById('tt').textContent = '0:00';
+      }
+    }
+
+    const ap = document.getElementById('ap');
+    ap.addEventListener('timeupdate', () => {
+      const cur = state.queue[state.currentIndex];
+      if (!cur) return;
+      const d = ap.duration || cur.duration || 1;
+      document.getElementById('pf').style.width = (ap.currentTime / d * 100).toFixed(1) + '%';
+      document.getElementById('tc').textContent = fmt(Math.floor(ap.currentTime));
+    });
+    ap.addEventListener('ended', () => {
+      const cur = state.queue[state.currentIndex];
+      if (cur) socket.emit('song_ended', { uid: cur.uid });
+    });
+    ap.addEventListener('error', () => {
+      if (!ap.src || ap.src === location.href) return;
+      toast('⚠️ 当前歌曲无法播放，2秒后自动跳过', 'warning');
+      setTimeout(() => {
+        const cur = state.queue[state.currentIndex];
+        if (cur) socket.emit('song_ended', { uid: cur.uid });
+      }, 2000);
+    });
+
+    function seekTo(e) {
+      if (!isAdmin) return;
+      const r = e.offsetX / e.currentTarget.offsetWidth;
+      if (ap.duration) ap.currentTime = r * ap.duration;
+    }
+
+    // ── 控制 ─────────────────────────────────────────────────────
+    function togglePlay() { if (isAdmin) socket.emit('toggle_play'); }
+    function nextSong() { if (isAdmin) socket.emit('next_song'); }
+    function removeSong(uid) { if (isAdmin) socket.emit('remove_song', { uid }); }
+    function clearQueue() { if (isAdmin && confirm('确定清空播放队列？')) socket.emit('clear_queue'); }
+
+    // ── 管理员 ───────────────────────────────────────────────────
+    function openAdminModal() { document.getElementById('adm-modal').style.display = 'flex'; setTimeout(() => document.getElementById('apwd').focus(), 100); }
+    function closeAdminModal() { document.getElementById('adm-modal').style.display = 'none'; document.getElementById('apwd').value = ''; }
+    function submitAdmin() {
+      const pwd = document.getElementById('apwd').value;
+      socket.emit('admin_login', { password: pwd }, res => {
+        if (res.ok) {
+          isAdmin = true;
+          document.body.classList.add('adm');
+          document.querySelectorAll('.ao').forEach(el => el.style.display = '');
+          document.getElementById('btn-adm').style.display = 'none';
+          document.getElementById('btn-logout').style.display = '';
+          closeAdminModal(); toast('✅ 管理员登录成功', 'success'); renderQueue();
+        } else { toast('❌ 密码错误', 'error'); }
+      });
+    }
+    function adminLogout() {
+      isAdmin = false; document.body.classList.remove('adm');
+      document.querySelectorAll('.ao').forEach(el => el.style.display = 'none');
+      document.getElementById('btn-adm').style.display = '';
+      document.getElementById('btn-logout').style.display = 'none';
+      renderQueue(); toast('已退出管理员模式', 'info');
+    }
+
+    // ── 音量控制 ────────────────────────────────────────────────
+    const volSlider = document.getElementById('vol-slider');
+    const volIcon = document.getElementById('vol-icon');
+    let lastVolume = 80;
+    let isMuted = false;
+
+    // 初始化音量
+    const savedVol = localStorage.getItem('jk_vol');
+    if (savedVol !== null) {
+      volSlider.value = savedVol;
+      ap.volume = savedVol / 100;
+    } else {
+      ap.volume = 0.8;
+    }
+
+    function setVolume(val) {
+      const v = parseInt(val);
+      ap.volume = v / 100;
+      isMuted = v === 0;
+      lastVolume = v > 0 ? v : lastVolume;
+      updateVolIcon();
+      localStorage.setItem('jk_vol', v);
+    }
+
+    function toggleMute() {
+      if (isMuted) {
+        ap.volume = lastVolume / 100;
+        volSlider.value = lastVolume;
+        isMuted = false;
+      } else {
+        lastVolume = parseInt(volSlider.value) || 80;
+        ap.volume = 0;
+        volSlider.value = 0;
+        isMuted = true;
+      }
+      updateVolIcon();
+    }
+
+    function updateVolIcon() {
+      const v = ap.volume;
+      if (v === 0 || isMuted) volIcon.textContent = '🔇';
+      else if (v < 0.4) volIcon.textContent = '🔈';
+      else if (v < 0.7) volIcon.textContent = '🔉';
+      else volIcon.textContent = '🔊';
+    }
+
+    // ── 工具 ─────────────────────────────────────────────────────
+    function fmt(s) { return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`; }
+    function esc(s) { return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+    function toast(msg, type = 'info') {
+      const w = document.getElementById('tw');
+      const t = document.createElement('div');
+      t.className = 'toast ' + type; t.textContent = msg; w.appendChild(t);
+      setTimeout(() => { t.style.opacity = '0'; t.style.transition = 'opacity .3s'; setTimeout(() => t.remove(), 300); }, 3500);
+    }
+
+    // 初始化昵称
+    (() => {
+      const s = localStorage.getItem('jk_nick');
+      if (s) document.getElementById('nk').value = s;
+      document.getElementById('nk').addEventListener('input', function () { localStorage.setItem('jk_nick', this.value); });
+    })();
+  </script>
+</body>
+
+</html>
