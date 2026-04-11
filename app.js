@@ -63,22 +63,62 @@ app.get('/api/search', async (req, res) => {
 });
 
 // ─────────────────────────────────────────
-// 播放 URL 获取（走 musicAPI → iTunes）
+// iTunes 备用：通过歌曲名+歌手获取播放链接
+// ─────────────────────────────────────────
+const https = require('https');
+
+function itunesSearch(name, artist) {
+  const term = encodeURIComponent(`${name} ${artist}`);
+  return new Promise((resolve, reject) => {
+    const url = `https://itunes.apple.com/search?term=${term}&media=music&limit=5`;
+    https.get(url, (res) => {
+      let d = '';
+      res.on('data', c => d += c);
+      res.on('end', () => {
+        try {
+          const data = JSON.parse(d);
+          resolve(data.results || []);
+        } catch (e) { reject(e); }
+      });
+    }).on('error', reject);
+  });
+}
+
+// ─────────────────────────────────────────
+// 播放 URL 获取（优先 QQ → 失败回退 iTunes）
 // ─────────────────────────────────────────
 app.get('/api/song/url', async (req, res) => {
-  const { id, source = 'qq' } = req.query;
+  const { id, source = 'qq', name, artist } = req.query;
   if (!id) return res.json({ url: null });
 
+  // 1. 先尝试 QQ 源
   try {
     const data = await musicApiGet(`/api/get/song/${source}?id=${encodeURIComponent(id)}`);
     if (data.success && data.url) {
-      console.log('✅ 获取播放链接成功');
+      console.log('✅ QQ播放链接获取成功');
       return res.json({ url: data.url });
     }
-    throw new Error(data.message || '无法获取');
+    console.warn('⚠️ QQ返回无链接：', data.message || 'unknown');
   } catch (e) {
-    console.warn('❌ 获取播放链接失败', e.message);
-    return res.json({ url: null, error: e.message });
+    console.warn('⚠️ QQ获取失败：', e.message);
+  }
+
+  // 2. QQ 失败，尝试 iTunes 备用
+  if (!name && !artist) {
+    return res.json({ url: null, error: 'QQ - 歌曲需要付费或无法获取' });
+  }
+
+  try {
+    console.log('🔄 尝试 iTunes 备用搜索：', name, artist);
+    const results = await itunesSearch(name, artist);
+    if (results.length > 0 && results[0].previewUrl) {
+      console.log('✅ iTunes 备用链接获取成功');
+      return res.json({ url: results[0].previewUrl, from: 'itunes' });
+    }
+    throw new Error('iTunes 未找到预览');
+  } catch (e) {
+    console.warn('❌ iTunes 备用也失败：', e.message);
+    return res.json({ url: null, error: 'QQ 和 iTunes 均无法获取播放链接' });
   }
 });
 

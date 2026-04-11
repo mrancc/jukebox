@@ -920,8 +920,11 @@
       if (!r.ok) throw new Error('HTTP ' + r.status);
       return r.json();
     }
-    async function apiSongUrl(id, source) {
-      const r = await fetch(`/api/song/url?id=${id}&source=${source || 'netease'}`);
+    async function apiSongUrl(id, source, name, artist) {
+      const params = new URLSearchParams({ id, source: source || 'qq' });
+      if (name) params.set('name', name);
+      if (artist) params.set('artist', artist);
+      const r = await fetch(`/api/song/url?${params}`);
       if (!r.ok) throw new Error('HTTP ' + r.status);
       return r.json();
     }
@@ -1025,8 +1028,10 @@
       btn.disabled = true; btn.textContent = '获取中…';
 
       try {
-        const { url } = await apiSongUrl(song.id, song.source);
-        if (!url) throw new Error('无法获取播放链接');
+        const result = await apiSongUrl(song.id, song.source, song.name, song.artist);
+        let url = result.url;
+        if (!url) throw new Error(result.error || '无法获取播放链接');
+        if (result.from === 'itunes') toast('💡 QQ 无版权，已通过 iTunes 播放预览版', 'info');
         const nickname = document.getElementById('nk').value.trim() || '匿名';
         socket.emit('add_song', { song: { ...song, url }, nickname });
         btn.textContent = '✓ 已点';
