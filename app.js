@@ -236,9 +236,9 @@ io.on('connection', (socket) => {
 // ─────────────────────────────────────────
 const PORT = process.env.PORT || 3000;
 
-server.listen(PORT, '0.0.0.0', () => {
-  console.log(`🎵 三源点歌台已启动：`);
-  console.log(`   本机访问：  http://localhost:${PORT}`);
-  console.log(`   局域网访问：http://<你的内网IP>:${PORT}`);
-  console.log(`   （在 cmd 中运行 ipconfig 查看 IPv4 地址）`);
+// Railway 需要监听 '::' 或 '0.0.0.0'
+const HOST = process.env.RAILWAY_ENVIRONMENT ? '::' : '0.0.0.0';
+
+server.listen(PORT, HOST, () => {
+  console.log(`🎵 三源点歌台已启动：端口 ${PORT}`);
 });
