@@ -18,8 +18,10 @@ const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'admin123';
 const MUSIC_API = process.env.MUSIC_API_URL || 'http://localhost:8001';
 
 function musicApiGet(apiPath) {
+  const url = new URL(MUSIC_API + apiPath);
+  const lib = url.protocol === 'https:' ? require('https') : http;
   return new Promise((resolve, reject) => {
-    http.get(`${MUSIC_API}${apiPath}`, (res) => {
+    lib.get(url, (res) => {
       let d = '';
       res.on('data', c => d += c);
       res.on('end', () => {
