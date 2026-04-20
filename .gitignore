@@ -1,9 +1,3 @@
 node_modules/
-.env
-.git/
-.dockerignore
-Dockerfile
-docker-compose.yml
-ecosystem.config.js
-deploy.sh
-DEPLOY.md
+.state.json
+nc_cookie.txt

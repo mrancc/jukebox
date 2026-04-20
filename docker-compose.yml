@@ -1,0 +1,25 @@
+version: "3.8"
+
+services:
+  # ── musicAPI 音乐接口服务 ──────────────────────────────────────
+  musicapi:
+    build: ./musicAPI
+    container_name: musicapi
+    restart: unless-stopped
+    # 不对外暴露端口，只在内部网络通信
+
+  # ── 点歌台（前端 + 后端）────────────────────────────────────────
+  jukebox:
+    build: ./jukebox
+    container_name: jukebox
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - MUSIC_API_URL=http://musicapi:8001
+      # 管理员密码，部署时务必修改！
+      - ADMIN_PASSWORD=your_strong_password_here
+    depends_on:
+      - musicapi
