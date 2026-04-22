@@ -1,0 +1,168 @@
+/* 歌词全屏弹窗 */
+.lyric-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 600;
+  background: rgba(var(--bg-rgb), .75);
+  backdrop-filter: blur(30px);
+  -webkit-backdrop-filter: blur(30px);
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  animation: lyricFadeIn .3s ease;
+}
+
+.lyric-modal.show {
+  display: flex;
+}
+
+.lyric-modal-hd {
+  width: 100%;
+  max-width: 700px;
+  padding: 20px 24px 0;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-shrink: 0;
+}
+
+.lyric-modal-cover {
+  width: 64px;
+  height: 64px;
+  border-radius: 12px;
+  object-fit: cover;
+  border: 2px solid var(--border);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, .4);
+}
+
+.lyric-modal-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.lyric-modal-name {
+  font-size: 1.15rem;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.lyric-modal-artist {
+  font-size: .82rem;
+  color: var(--text2);
+  margin-top: 2px;
+}
+
+.lyric-modal-close {
+  background: rgba(255, 255, 255, .08);
+  border: none;
+  color: var(--text2);
+  font-size: 1.4rem;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: var(--t);
+  flex-shrink: 0;
+}
+
+.lyric-modal-close:hover {
+  background: rgba(255, 255, 255, .15);
+  color: var(--text);
+}
+
+.lyric-modal-body {
+  flex: 1;
+  width: 100%;
+  max-width: 700px;
+  overflow-y: auto;
+  padding: 24px 28px 40px;
+  -webkit-overflow-scrolling: touch;
+}
+
+.lyric-modal-line {
+  padding: 10px 0;
+  font-size: 1rem;
+  color: rgba(255, 255, 255, .25);
+  line-height: 1.6;
+  transition: all .35s ease;
+  cursor: default;
+  pointer-events: none;
+}
+
+.lyric-modal-line:hover {
+  color: rgba(255, 255, 255, .45);
+}
+
+.lyric-modal-line.active {
+  color: var(--accent);
+  font-size: 1.15rem;
+  font-weight: 500;
+  text-shadow: 0 0 20px rgba(var(--accent-rgb), .35);
+}
+
+.lyric-modal-line.near {
+  color: rgba(255, 255, 255, .5);
+  font-size: 1.02rem;
+}
+
+.lyric-modal-empty {
+  color: var(--text2);
+  font-size: .92rem;
+  text-align: center;
+  padding: 60px 0;
+}
+
+.lyric-modal-bar {
+  position: sticky;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 10;
+  background: rgba(var(--bg-rgb), .6);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  padding: 10px 28px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  max-width: 700px;
+  width: 100%;
+}
+
+.lyric-modal-bar .pt {
+  font-size: .78rem;
+  color: var(--text2);
+  flex-shrink: 0;
+}
+
+.lyric-modal-bar .pb {
+  flex: 1;
+  height: 3px;
+  background: rgba(255, 255, 255, .08);
+  cursor: default;
+  pointer-events: none;
+  border-radius: 4px;
+  overflow: hidden;
+  cursor: pointer;
+}
+
+.lyric-modal-bar .pf {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent), var(--accent2));
+  width: 0%;
+}
+
+.lyric-bar-tip {
+  font-size: .7rem;
+  color: var(--text2);
+  text-align: center;
+  padding: 4px 0 0;
+  opacity: .5;
+}

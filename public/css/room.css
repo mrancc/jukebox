@@ -1,0 +1,49 @@
+/* ─────────────────────────────────────────
+   Room（房间信息栏）样式
+   ───────────────────────────────────────── */
+
+/* ── 房间标签（header 内） ── */
+.room-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  background: var(--surface2);
+  border-radius: 16px;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  border: 1px solid var(--border);
+  white-space: nowrap;
+  max-width: 200px;
+  overflow: hidden;
+}
+
+.room-tag-icon {
+  flex-shrink: 0;
+}
+
+.room-tag-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-weight: 500;
+}
+
+/* ── 退出房间按钮 ── */
+#room-leave-btn {
+  font-size: 0.8rem;
+  padding: 4px 12px;
+  opacity: 0.7;
+  transition: opacity 0.2s;
+}
+
+#room-leave-btn:hover {
+  opacity: 1;
+}
+
+/* ── header-controls 布局调整 ── */
+.header-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}

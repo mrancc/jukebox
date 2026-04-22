@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="aurora">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+  <title>🎵 三源点歌台 - 房间大厅</title>
+  <link rel="stylesheet" href="/public/css/variables.css?v=4">
+  <link rel="stylesheet" href="/public/css/lobby.css?v=6">
+  <link rel="stylesheet" href="/public/css/button.css?v=4">
+  <link rel="stylesheet" href="/public/css/modal.css?v=5">
+  <link rel="stylesheet" href="/public/css/auth.css?v=4">
+  <style id="theme-light" media="none"></style>
+</head>
+<body>
+  <!-- 背景装饰光晕 -->
+  <div class="lobby-bg-orb lobby-bg-orb--1"></div>
+  <div class="lobby-bg-orb lobby-bg-orb--2"></div>
+
+  <div class="lobby">
+    <!-- 头部 -->
+    <header class="lobby-header">
+      <div class="lobby-logo">
+        <span class="logo-icon">🎵</span>
+        <h1>三源点歌台</h1>
+      </div>
+      <p class="lobby-subtitle">选择一个房间加入，或创建你的专属房间</p>
+      <div class="header-actions">
+        <button id="btn-theme" class="btn-icon" title="切换主题">🌓</button>
+        <button id="btn-login" class="btn-icon" title="登录/注册">👤</button>
+      </div>
+    </header>
+
+    <!-- 用户栏（登录后显示） -->
+    <div class="user-bar" id="user-bar" style="display:none">
+      <div class="user-avatar">?</div>
+      <div class="user-info">
+        <div class="user-name">用户</div>
+        <div class="user-email">email</div>
+      </div>
+      <button id="btn-logout" class="btn-logout">退出</button>
+    </div>
+
+    <!-- 创建房间 -->
+    <section class="create-section">
+      <h2>创建房间</h2>
+      <div class="create-form">
+        <input id="room-name-input" type="text" placeholder="输入房间名（最多20字）" maxlength="20" autocomplete="off">
+        <input id="room-password-input" type="password" placeholder="房间密码（选填，留空则无密码）" maxlength="20" autocomplete="off">
+        <button id="create-btn" class="btn btn-primary">创建</button>
+      </div>
+      <p class="create-hint">创建者自动成为房主（管理员），房间名不可重复</p>
+    </section>
+
+    <!-- 房间列表 -->
+    <section class="rooms-section">
+      <div class="rooms-header">
+        <h2>在线房间 <span class="room-count">0</span></h2>
+        <button id="refresh-btn" class="btn-icon" title="刷新列表">🔄</button>
+      </div>
+      <div id="room-list" class="room-list">
+        <div class="room-empty">暂无房间，创建一个吧！</div>
+      </div>
+    </section>
+
+    <!-- 昵称输入 -->
+    <section class="nickname-section">
+      <label for="nickname-input">你的昵称：</label>
+      <input id="nickname-input" type="text" placeholder="匿名" maxlength="16" autocomplete="off">
+    </section>
+
+    <!-- 页脚 -->
+    <footer class="lobby-footer">
+      三源点歌台 · QQ + 网易云 + iTunes 三源搜索
+    </footer>
+  </div>
+
+  <div id="tw"></div>
+
+  <!-- 加入房间密码弹窗 -->
+  <div id="password-modal" class="modal" style="display:none">
+    <div class="modal-overlay"></div>
+    <div class="modal-box">
+      <h3 class="modal-title">🔒 房间需要密码</h3>
+      <input id="join-password-input" type="password" placeholder="请输入房间密码" maxlength="20" autocomplete="off" class="mi">
+      <div class="ma">
+        <button id="join-pwd-cancel" class="btn-g">取消</button>
+        <button id="join-pwd-confirm" class="btn btn-primary">进入</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="/public/js/utils.js?v=7"></script>
+  <script src="/public/js/theme.js?v=7"></script>
+  <script src="/public/js/auth.js?v=7"></script>
+  <script src="/public/js/lobby.js?v=7"></script>
+</body>
+</html>

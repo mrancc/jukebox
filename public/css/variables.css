@@ -1,0 +1,69 @@
+/* ── 默认主题：Cyber（赛博朋克） ── */
+:root,
+[data-theme="cyber"] {
+  --bg: #0a0c14;
+  --bg-rgb: 10, 12, 20;
+  --surface: #111420;
+  --surface2: #181c2e;
+  --border: #1f2540;
+  --accent: #7c5cfc;
+  --accent2: #fc5c7d;
+  --accent3: #43e97b;
+  --accent-rgb: 124, 92, 252;
+  --accent2-rgb: 252, 92, 125;
+  --text: #e8eaf6;
+  --text2: #8b90b8;
+  --glow: 0 0 20px rgba(124, 92, 252, 0.4);
+  --r: 12px;
+  --t: .25s ease;
+  --hot-active: #e72d2d;
+  --hot-active-bg: rgba(231, 45, 45, .1);
+  --qq-color: #31c27c;
+  --nc-color: #e72d2d;
+}
+
+/* ── Aurora 极光主题 ── */
+[data-theme="aurora"] {
+  --bg: #09090b;
+  --bg-rgb: 9, 9, 11;
+  --surface: #111113;
+  --surface2: #1a1a1e;
+  --border: #27272a;
+  --accent: #818cf8;
+  --accent2: #f472b6;
+  --accent3: #34d399;
+  --accent-rgb: 129, 140, 248;
+  --accent2-rgb: 244, 114, 182;
+  --text: #fafafa;
+  --text2: #71717a;
+  --glow: 0 0 20px rgba(129, 140, 248, 0.25);
+  --r: 14px;
+  --t: .25s ease;
+  --hot-active: #ef4444;
+  --hot-active-bg: rgba(239, 68, 68, .1);
+  --qq-color: #34d399;
+  --nc-color: #ef4444;
+}
+
+/* ── Sakura 樱花主题 ── */
+[data-theme="sakura"] {
+  --bg: #0f0b0e;
+  --bg-rgb: 15, 11, 14;
+  --surface: #1a1518;
+  --surface2: #241e22;
+  --border: #3a3036;
+  --accent: #f9a8d4;
+  --accent2: #c084fc;
+  --accent3: #86efac;
+  --accent-rgb: 249, 168, 212;
+  --accent2-rgb: 192, 132, 252;
+  --text: #fdf2f8;
+  --text2: #a88a99;
+  --glow: 0 0 24px rgba(249, 168, 212, 0.3);
+  --r: 16px;
+  --t: .25s ease;
+  --hot-active: #f43f5e;
+  --hot-active-bg: rgba(244, 63, 94, .1);
+  --qq-color: #86efac;
+  --nc-color: #f43f5e;
+}

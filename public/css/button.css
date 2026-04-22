@@ -1,0 +1,36 @@
+.btn {
+  border: none;
+  border-radius: 8px;
+  padding: 10px 18px;
+  font-size: .85rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: var(--t);
+  font-family: inherit;
+  white-space: nowrap;
+}
+
+.btn-p {
+  background: var(--accent);
+  color: #fff;
+}
+
+.btn-p:hover {
+  filter: brightness(1.15);
+  box-shadow: var(--glow);
+}
+
+.btn-d {
+  background: rgba(var(--accent2-rgb), .15);
+  color: var(--accent2);
+  border: 1px solid rgba(var(--accent2-rgb), .3);
+}
+
+.btn-d:hover {
+  background: rgba(var(--accent2-rgb), .25);
+}
+
+.btn-sm {
+  padding: 5px 10px;
+  font-size: .75rem;
+}

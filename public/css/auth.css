@@ -1,0 +1,327 @@
+/* ─────────────────────────────────────────
+   Auth（登录/注册）样式 — Modern Glassmorphism
+   ───────────────────────────────────────── */
+
+/* 认证遮罩层 */
+.auth-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 600;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(16px) saturate(180%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  animation: authFadeIn 0.3s ease-out;
+}
+
+@keyframes authFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* 弹窗主体 */
+.auth-box {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 24px;
+  padding: 40px 36px 32px;
+  width: 100%;
+  max-width: 420px;
+  box-shadow: 0 32px 64px rgba(0, 0, 0, 0.5);
+  animation: authSlideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+@keyframes authSlideUp {
+  from { opacity: 0; transform: translateY(24px) scale(0.96); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* 顶部装饰光晕 */
+.auth-box::before {
+  content: '';
+  position: absolute;
+  top: -60px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 200px;
+  height: 140px;
+  background: var(--accent);
+  opacity: 0.08;
+  filter: blur(40px);
+  pointer-events: none;
+}
+
+/* 头像区域 */
+.auth-avatar {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: var(--surface2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 20px;
+  font-size: 1.6rem;
+  position: relative;
+  border: 2px solid var(--border);
+}
+
+.auth-avatar::after {
+  content: '';
+  position: absolute;
+  inset: -4px;
+  border-radius: 50%;
+  background: conic-gradient(from 0deg, var(--accent), transparent, var(--accent2), transparent);
+  z-index: -1;
+  animation: avatarGlow 4s linear infinite;
+  opacity: 0.4;
+}
+
+@keyframes avatarGlow {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.auth-box h3 {
+  text-align: center;
+  margin: 0 0 6px 0;
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: -0.01em;
+}
+
+.auth-subtitle {
+  text-align: center;
+  font-size: 0.85rem;
+  color: var(--text2);
+  margin: 0 0 28px 0;
+}
+
+/* 表单字段 */
+.auth-field {
+  margin-bottom: 16px;
+}
+
+.auth-field label {
+  display: block;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--text2);
+  margin-bottom: 8px;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.auth-field input {
+  width: 100%;
+  padding: 14px 16px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--bg);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 0.95rem;
+  outline: none;
+  transition: all 0.25s ease;
+  box-sizing: border-box;
+}
+
+.auth-field input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--glow);
+}
+
+.auth-field input::placeholder {
+  color: var(--text2);
+  opacity: 0.5;
+}
+
+/* 操作按钮 */
+.auth-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 28px;
+}
+
+.auth-actions button {
+  flex: 1;
+  padding: 14px;
+  border-radius: 12px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.auth-actions .btn-g {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  color: var(--text2);
+}
+
+.auth-actions .btn-g:hover {
+  background: var(--border);
+  color: var(--text);
+}
+
+.auth-actions .btn-primary {
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  border: none;
+  color: #fff;
+  box-shadow: 0 4px 16px var(--glow);
+}
+
+.auth-actions .btn-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 24px var(--glow);
+  filter: brightness(1.1);
+}
+
+.auth-actions .btn-primary:active {
+  transform: translateY(0);
+}
+
+/* 切换登录/注册 */
+.auth-switch {
+  text-align: center;
+  margin-top: 24px;
+  font-size: 0.85rem;
+  color: var(--text2);
+}
+
+.auth-switch a {
+  color: var(--accent);
+  cursor: pointer;
+  text-decoration: none;
+  font-weight: 500;
+  transition: opacity 0.2s;
+}
+
+.auth-switch a:hover {
+  opacity: 0.8;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+/* 错误提示 */
+.auth-error {
+  text-align: center;
+  font-size: 0.85rem;
+  color: var(--accent2);
+  margin-bottom: 12px;
+  min-height: 1.2em;
+  padding: 8px 12px;
+  background: var(--surface2);
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  display: none;
+}
+
+.auth-error:empty {
+  display: none;
+}
+
+.auth-error:not(:empty) {
+  display: block;
+  animation: shakeError 0.4s ease;
+}
+
+@keyframes shakeError {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-6px); }
+  40% { transform: translateX(6px); }
+  60% { transform: translateX(-4px); }
+  80% { transform: translateX(4px); }
+}
+
+/* ── 用户栏（已登录状态） ── */
+.user-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 14px 20px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  animation: authFadeIn 0.5s ease;
+}
+
+.user-bar .user-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  font-weight: 700;
+  color: #fff;
+  flex-shrink: 0;
+  box-shadow: 0 4px 12px var(--glow);
+}
+
+.user-bar .user-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.user-bar .user-name {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.user-bar .user-email {
+  font-size: 0.78rem;
+  color: var(--text2);
+}
+
+.user-bar .btn-logout {
+  padding: 8px 16px;
+  font-size: 0.8rem;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  color: var(--text2);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: inherit;
+}
+
+.user-bar .btn-logout:hover {
+  color: var(--accent2);
+  border-color: var(--accent2);
+}
+
+/* ── 响应式 ── */
+@media (max-width: 600px) {
+  .auth-box {
+    padding: 32px 24px 24px;
+    border-radius: 20px;
+    max-width: 100%;
+  }
+
+  .auth-avatar {
+    width: 48px;
+    height: 48px;
+    font-size: 1.3rem;
+  }
+
+  .auth-box h3 {
+    font-size: 1.25rem;
+  }
+
+  .user-bar {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+}

@@ -1,0 +1,268 @@
+#pbar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 200;
+  background: rgba(var(--bg-rgb), .96);
+  backdrop-filter: blur(24px);
+  border-top: 1px solid var(--border);
+  padding: 12px 20px;
+}
+
+.pi {
+  max-width: 1100px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.pcover {
+  width: 50px;
+  height: 50px;
+  border-radius: 8px;
+  object-fit: cover;
+  background: var(--surface2);
+  flex-shrink: 0;
+  border: 1px solid var(--border);
+}
+
+.pinfo {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.pinfo-left {
+  flex-shrink: 0;
+  min-width: 0;
+  max-width: 260px;
+}
+
+.pname {
+  font-size: .88rem;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.partist {
+  font-size: .74rem;
+  color: var(--text2);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.plyrics {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  height: 28px;
+  overflow: hidden;
+  border-left: 1px solid var(--border);
+  padding-left: 16px;
+  min-width: 0;
+  position: relative;
+}
+
+.lyric-line {
+  font-size: .76rem;
+  color: var(--text3);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.4;
+  transition: opacity .3s ease;
+  opacity: .6;
+}
+
+.lyric-expand-tip {
+  font-size: .65rem;
+  color: var(--text3);
+  opacity: .5;
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: none;
+  transition: opacity .3s;
+  white-space: nowrap;
+}
+
+.lyric-cur {
+  color: var(--accent);
+  font-size: .78rem;
+  opacity: 1;
+}
+
+.lyric-next {
+  color: var(--text3);
+}
+
+.pctrl {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.cbtn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text2);
+  font-size: 1.15rem;
+  padding: 6px;
+  border-radius: 50%;
+  transition: var(--t);
+  width: 34px;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cbtn:hover {
+  color: var(--accent);
+}
+
+.cbtn.pbtn {
+  background: var(--accent);
+  color: #fff;
+  font-size: .95rem;
+  box-shadow: var(--glow);
+}
+
+.cbtn.pbtn:hover {
+  filter: brightness(1.15);
+}
+
+.cbtn.ao {
+  display: none;
+}
+
+.adm .cbtn.ao {
+  display: flex;
+}
+
+.pw {
+  flex: 1;
+  max-width: 380px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.pt {
+  font-size: .72rem;
+  color: var(--text2);
+  flex-shrink: 0;
+}
+
+.pb {
+  flex: 1;
+  height: 4px;
+  background: var(--surface2);
+  cursor: default;
+  pointer-events: none;
+  border-radius: 4px;
+  overflow: hidden;
+  cursor: pointer;
+}
+
+.pf {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent), var(--accent2));
+  transition: width .5s linear;
+  width: 0%;
+}
+
+.vol-wrap {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.vol-icon {
+  cursor: pointer;
+  font-size: 1.05rem;
+  color: var(--text2);
+  transition: var(--t);
+  user-select: none;
+  line-height: 1;
+}
+
+.vol-icon:hover {
+  color: var(--accent);
+}
+
+.vol-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 80px;
+  height: 4px;
+  background: var(--surface2);
+  border-radius: 4px;
+  outline: none;
+  cursor: pointer;
+  transition: var(--t);
+}
+
+.vol-slider:hover {
+  background: var(--border);
+}
+
+.vol-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--accent);
+  cursor: pointer;
+  box-shadow: 0 0 6px rgba(var(--accent-rgb), .5);
+  transition: var(--t);
+}
+
+.vol-slider::-webkit-slider-thumb:hover {
+  filter: brightness(1.15);
+  transform: scale(1.15);
+}
+
+.vol-slider::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--accent);
+  cursor: pointer;
+  border: none;
+}
+
+@media(max-width:600px) {
+  .pw {
+    display: none;
+  }
+
+  .plyrics {
+    display: none;
+  }
+
+  .pinfo-left {
+    max-width: none;
+  }
+
+  .pi {
+    gap: 8px;
+  }
+
+  .vol-slider {
+    width: 60px;
+  }
+}

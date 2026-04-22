@@ -10,7 +10,6 @@ const server = http.createServer(app);
 const io     = new Server(server, { cors: { origin: '*' } });
 
 // ─── 网易云 Cookie（VIP 账号支持）──────────────────────
-// 运行 node nc_login.js 扫码登录获取 Cookie
 function loadNcCookie() {
   try {
     const f = path.join(__dirname, 'nc_cookie.txt');
@@ -23,7 +22,7 @@ if (NC_COOKIE) console.log('✅ 已加载网易云 Cookie');
 else console.log('ℹ️ 未检测到网易云 Cookie（VIP 歌曲将无法播放），运行 node nc_login.js 扫码登录');
 
 app.use(express.json());
-app.use(express.static(path.join(__dirname)));
+// express.static 放在页面路由之后（见底部），防止 / 被静态 index.html 抢先匹配
 
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'admin';
 
@@ -95,7 +94,7 @@ async function qqSearch(keyword, limit = 20, page = 1) {
   });
 }
 
-// QQ 获取播放链接：https://u.y.qq.com/cgi-bin/musicu.fcg（vkey 接口，品质降级）
+// QQ 获取播放链接
 const QUALITY_MAP = [
   { br: 999, prefix: 'F000', ext: '.flac' },
   { br: 320, prefix: 'M800', ext: '.mp3' },
@@ -124,19 +123,16 @@ async function qqGetSongUrl(mid) {
         const baseUrl = sip[1] || sip[0] || '';
         return (baseUrl + purl).replace('http://', 'https://');
       }
-    } catch (e) {
-      // 当前品质不可用，尝试下一个
-    }
+    } catch (e) {}
   }
   return null;
 }
 
 // ─────────────────────────────────────────
-// 网易云音乐 API（使用 NeteaseCloudMusicApi npm 包）
+// 网易云音乐 API
 // ─────────────────────────────────────────
 const NeteaseCloudMusicApi = require('NeteaseCloudMusicApi');
 
-// 网易云搜索
 async function ncSearch(keyword, limit = 20, page = 1) {
   const result = await NeteaseCloudMusicApi.search({
     keywords: keyword, limit, type: 1, offset: (page - 1) * limit,
@@ -145,7 +141,6 @@ async function ncSearch(keyword, limit = 20, page = 1) {
   const songs = result?.body?.result?.songs || [];
   if (songs.length === 0) return [];
 
-  // search API 只返回 picId，需用 song_detail 批量拿完整 picUrl
   const ids = songs.map(s => s.id).join(',');
   let coverMap = {};
   try {
@@ -155,36 +150,29 @@ async function ncSearch(keyword, limit = 20, page = 1) {
       const picUrl = d.al?.picUrl || '';
       coverMap[String(d.id)] = picUrl ? picUrl.replace('http://', 'https://') : '';
     });
-  } catch (e) {
-    // 拿不到封面也不影响主流程
-  }
+  } catch (e) {}
 
-  return songs.map(s => {
-    return {
-      id:       String(s.id),
-      name:     s.name || '',
-      artist:   (s.artists || []).map(a => a.name).join(' / '),
-      album:    s.album?.name || '',
-      cover:    coverMap[String(s.id)] || '',
-      duration: s.duration || 0,
-      needPay:  s.fee === 1,
-      source:   'nc',
-    };
-  });
+  return songs.map(s => ({
+    id:       String(s.id),
+    name:     s.name || '',
+    artist:   (s.artists || []).map(a => a.name).join(' / '),
+    album:    s.album?.name || '',
+    cover:    coverMap[String(s.id)] || '',
+    duration: s.duration || 0,
+    needPay:  s.fee === 1,
+    source:   'nc',
+  }));
 }
 
-// 网易云获取播放链接
 async function ncGetSongUrl(id) {
   const result = await NeteaseCloudMusicApi.song_url_v1({ id, level: 'exhigh', encrypt: '1', cookie: NC_COOKIE });
   const item = result?.body?.data?.[0];
-  if (item?.url && item?.code === 200) {
-    return item.url.replace('http://', 'https://');
-  }
+  if (item?.url && item?.code === 200) return item.url.replace('http://', 'https://');
   return null;
 }
 
 // ─────────────────────────────────────────
-// iTunes 备用：通过歌曲名+歌手获取播放链接
+// iTunes 备用
 // ─────────────────────────────────────────
 function itunesSearch(name, artist) {
   const term = encodeURIComponent(`${name} ${artist}`);
@@ -201,75 +189,50 @@ function itunesSearch(name, artist) {
 }
 
 // ─────────────────────────────────────────
-// 网易云热门歌单推荐
+// HTTP API（搜索、播放、歌词等 — 不涉及房间隔离）
 // ─────────────────────────────────────────
-app.get('/api/hotlist', async (req, res) => {
-  const { type = 'hot' } = req.query; // hot=热歌榜, new=新歌榜, surge=飙升榜
 
-  // 网易云官方排行榜 idx: 0=飙升榜 1=新歌榜 3=热歌榜
+// 热门歌单推荐
+app.get('/api/hotlist', async (req, res) => {
+  const { type = 'hot' } = req.query;
   const idxMap = { hot: 3, new: 1, surge: 0 };
   const nameMap = { hot: '热歌榜', new: '新歌榜', surge: '飙升榜' };
   const idx = idxMap[type] ?? 3;
-
   try {
-    // 先拿到排行榜 id
     const top = await NeteaseCloudMusicApi.toplist_detail({ cookie: NC_COOKIE });
     const lists = top.body?.list || [];
     const playlist = lists[idx];
     if (!playlist?.id) throw new Error('排行榜数据为空');
-
-    // 用 playlist_track_all 获取完整歌曲列表
-    const result = await NeteaseCloudMusicApi.playlist_track_all({
-      id: playlist.id,
-      limit: 50,
-      cookie: NC_COOKIE,
-    });
+    const result = await NeteaseCloudMusicApi.playlist_track_all({ id: playlist.id, limit: 50, cookie: NC_COOKIE });
     const tracks = result.body?.songs || result.body?.tracks || [];
-
     const songs = tracks.slice(0, 50).map(t => {
       const picUrl = t.al?.picUrl || '';
       return {
-        id:       String(t.id),
-        name:     t.name || '',
-        artist:   (t.ar || []).map(a => a.name).join(' / '),
-        album:    t.al?.name || '',
-        cover:    picUrl ? picUrl.replace('http://', 'https://') : '',
-        duration: t.dt || 0,
-        needPay:  t.fee === 1,
-        source:   'nc',
+        id: String(t.id), name: t.name || '',
+        artist: (t.ar || []).map(a => a.name).join(' / '),
+        album: t.al?.name || '',
+        cover: picUrl ? picUrl.replace('http://', 'https://') : '',
+        duration: t.dt || 0, needPay: t.fee === 1, source: 'nc',
       };
     });
-
-    res.json({
-      name: nameMap[type] || playlist.name,
-      coverUrl: playlist.coverImgUrl || '',
-      songCount: songs.length,
-      songs,
-    });
+    res.json({ name: nameMap[type] || playlist.name, coverUrl: playlist.coverImgUrl || '', songCount: songs.length, songs });
   } catch (e) {
     console.warn('❌ 获取热门歌单失败:', e.message);
     res.json({ name: nameMap[type], songs: [], error: e.message });
   }
 });
 
-// ─────────────────────────────────────────
-// 歌词接口（网易云）
-// ─────────────────────────────────────────
+// 歌词接口
 app.get('/api/lyric', async (req, res) => {
   const { id, source } = req.query;
   if (!id) return res.json({ lines: [] });
-
   if (source === 'nc') {
     try {
       const result = await NeteaseCloudMusicApi.lyric({ id, cookie: NC_COOKIE });
       const lrc = result.body?.lrc?.lyric || '';
-      const tlyric = result.body?.tlyric?.lyric || ''; // 翻译歌词
-
-      // 兼容多种 LRC 时间戳格式：[00:00.00], [00:00.000], [00:00.00-1]
+      const tlyric = result.body?.tlyric?.lyric || '';
       const timeRe = /\[(\d{2}):(\d{2})\.(\d{2,3})(?:[^\]]*)?\](.*)/;
-
       const tLines = {};
-      // 解析翻译歌词
       tlyric.split('\n').forEach(line => {
         const m = line.match(timeRe);
         if (m && m[4].trim()) {
@@ -285,11 +248,9 @@ app.get('/api/lyric', async (req, res) => {
           const time = parseInt(m[1]) * 60 + parseInt(m[2]) + parseInt(m[3]) / (m[3].length === 3 ? 1000 : 100);
           const text = m[4].trim();
           if (!text) return null;
-          // 过滤元信息行：跳过前 10 秒的元信息，以及匹配关键词的行
           if (time < 10) return null;
           const isMeta = skipWords.some(w => text.includes(w + '：') || text.includes(w + ':') || text.includes(w + ' ：') || text.includes(w + ' :'));
           if (isMeta) return null;
-          // 组合翻译
           const tKey = Math.round(time * 100);
           const translation = tLines[tKey] || '';
           const finalText = translation ? `${text} ${translation}` : text;
@@ -301,107 +262,58 @@ app.get('/api/lyric', async (req, res) => {
       res.json({ lines: [] });
     }
   } else {
-    // QQ 音乐暂不支持歌词
     res.json({ lines: [] });
   }
 });
 
-// ─────────────────────────────────────────
-// 搜索接口（支持按源筛选：all / nc / qq）
-// ─────────────────────────────────────────
+// 搜索接口
 app.get('/api/search', async (req, res) => {
   const { q, limit = 20, source = 'all' } = req.query;
   if (!q) return res.json({ songs: [] });
-
   let qqSongs = [], ncSongs = [];
-
   if (source === 'all' || source === 'qq') {
-    qqSongs = await qqSearch(q, limit, 1)
-      .then(songs => { console.log('✅ QQ搜索命中', songs.length, '首'); return songs; })
-      .catch(e => { console.warn('❌ QQ搜索失败', e.message); return []; });
+    qqSongs = await qqSearch(q, limit, 1).catch(e => { console.warn('❌ QQ搜索失败', e.message); return []; });
   }
-
   if (source === 'all' || source === 'nc') {
-    ncSongs = await ncSearch(q, limit, 1)
-      .then(songs => { console.log('✅ 网易云搜索命中', songs.length, '首'); return songs; })
-      .catch(e => { console.warn('❌ 网易云搜索失败', e.message); return []; });
+    ncSongs = await ncSearch(q, limit, 1).catch(e => { console.warn('❌ 网易云搜索失败', e.message); return []; });
   }
-
-  // 网易云排前面，QQ 排后面
   const songs = [...ncSongs, ...qqSongs].slice(0, limit);
   return res.json({ songs });
 });
 
-// ─────────────────────────────────────────
-// 播放 URL 获取（QQ / 网易云 / iTunes 三级降级）
-// ─────────────────────────────────────────
+// 播放 URL 获取
 app.get('/api/song/url', async (req, res) => {
   const { id, source = 'qq', name, artist } = req.query;
   if (!id) return res.json({ url: null });
-
-  // 1. 根据来源获取
   if (source === 'nc') {
-    // 网易云源
     try {
       const url = await ncGetSongUrl(id);
-      if (url) {
-        console.log('✅ 网易云播放链接获取成功');
-        return res.json({ url });
-      }
-      console.warn('⚠️ 网易云返回无链接（VIP 或地域限制）');
-    } catch (e) {
-      console.warn('⚠️ 网易云获取失败：', e.message);
-    }
+      if (url) return res.json({ url });
+    } catch (e) { console.warn('⚠️ 网易云获取失败：', e.message); }
   } else {
-    // QQ 源
     try {
       const url = await qqGetSongUrl(id);
-      if (url) {
-        console.log('✅ QQ播放链接获取成功');
-        return res.json({ url });
-      }
-      console.warn('⚠️ QQ返回无链接（VIP 或地域限制）');
-    } catch (e) {
-      console.warn('⚠️ QQ获取失败：', e.message);
-    }
+      if (url) return res.json({ url });
+    } catch (e) { console.warn('⚠️ QQ获取失败：', e.message); }
   }
-
-  // 2. iTunes 备用
-  if (!name && !artist) {
-    return res.json({ url: null, error: '歌曲需要付费或无法获取' });
-  }
-
+  if (!name && !artist) return res.json({ url: null, error: '歌曲需要付费或无法获取' });
   try {
-    console.log('🔄 尝试 iTunes 备用搜索：', name, artist);
     const results = await itunesSearch(name, artist);
-    if (results.length > 0 && results[0].previewUrl) {
-      console.log('✅ iTunes 备用链接获取成功');
-      return res.json({ url: results[0].previewUrl, from: 'itunes' });
-    }
-    throw new Error('iTunes 未找到预览');
-  } catch (e) {
-    console.warn('❌ iTunes 备用也失败：', e.message);
-    return res.json({ url: null, error: '所有源均无法获取播放链接' });
-  }
+    if (results.length > 0 && results[0].previewUrl) return res.json({ url: results[0].previewUrl, from: 'itunes' });
+  } catch (e) { console.warn('❌ iTunes 备用也失败：', e.message); }
+  return res.json({ url: null, error: '所有源均无法获取播放链接' });
 });
 
-// ─────────────────────────────────────────
-// 聚合搜索代理（解决前端 CORS 问题）
-// ─────────────────────────────────────────
+// 聚合搜索代理
 const NGROK_BASE = process.env.NGROK_BASE || 'https://photokinetic-readably-rosaura.ngrok-free.dev';
 let ngrokSign = null;
 let ngrokSignTime = 0;
 
-// 获取签名（缓存5分钟）
 async function getNgrokSign() {
   if (ngrokSign && Date.now() - ngrokSignTime < 5 * 60 * 1000) return ngrokSign;
   const r = await fetch(NGROK_BASE + '/get_sign', { headers: { 'ngrok-skip-browser-warning': 'true' } });
   const data = await r.json();
-  if (data && data.data && data.data.sign) {
-    ngrokSign = data.data.sign;
-    ngrokSignTime = Date.now();
-    return ngrokSign;
-  }
+  if (data?.data?.sign) { ngrokSign = data.data.sign; ngrokSignTime = Date.now(); return ngrokSign; }
   throw new Error('获取签名失败');
 }
 
@@ -413,18 +325,17 @@ app.post('/api/agg-search', async (req, res) => {
     const r = await fetch(NGROK_BASE + '/get_music', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'ngrok-skip-browser-warning': 'true' },
-      body: JSON.stringify({ name, sign })
+      body: JSON.stringify({ name, sign }),
     });
     if (!r.ok) throw new Error('HTTP ' + r.status);
-    const data = await r.json();
-    res.json(data);
+    res.json(await r.json());
   } catch (e) {
     console.warn('⚠️ 聚合搜索失败：', e.message);
     res.json({ code: 500, error: e.message });
   }
 });
 
-// 聚合搜索实时获取播放链接（解决 mp3_url 过期和防盗链问题）
+// url-by-name
 app.get('/api/song/url-by-name', async (req, res) => {
   const { name, artist } = req.query;
   if (!name) return res.json({ url: null, error: '缺少歌曲名' });
@@ -433,65 +344,68 @@ app.get('/api/song/url-by-name', async (req, res) => {
     try {
       const songs = await searchFn(name, 5, 1);
       if (!songs || songs.length === 0) return null;
-
-      // 歌手名关键词拆分（用于模糊匹配，如"周杰伦/费玉清" → ["周杰伦","费玉清"]）
       const artistParts = artist ? artist.split(/[/、,，&\s]+/).filter(Boolean) : [];
-
-      // 匹配策略（优先级从高到低）：
-      // 1. 歌名精确 + 任一歌手名包含匹配
-      // 2. 歌名精确（不要求歌手匹配）
-      // 3. 歌名包含 + 任一歌手名包含匹配
-      // 4. 第一个搜索结果（降级）
       const match =
-        songs.find(s =>
-          s.name === name && artistParts.length > 0 &&
-          artistParts.some(a => s.artist.includes(a) || a.includes(s.artist.split(/[/、,，&]/)[0]))
-        ) ||
+        songs.find(s => s.name === name && artistParts.length > 0 && artistParts.some(a => s.artist.includes(a) || a.includes(s.artist.split(/[/、,，&]/)[0]))) ||
         songs.find(s => s.name === name) ||
-        songs.find(s =>
-          s.name.includes(name) && artistParts.length > 0 &&
-          artistParts.some(a => s.artist.includes(a) || a.includes(s.artist.split(/[/、,，&]/)[0]))
-        ) ||
+        songs.find(s => s.name.includes(name) && artistParts.length > 0 && artistParts.some(a => s.artist.includes(a) || a.includes(s.artist.split(/[/、,，&]/)[0]))) ||
         songs.find(s => s.name.includes(name)) ||
         songs[0];
-
-      console.log(`🔍 url-by-name[${sourceName}] 搜索 "${name}" "${artist || ''}" → 匹配: "${match.name}" - "${match.artist}"`);
       const url = await getUrlFn(match.id);
       if (url) return { url, from: sourceName, matchedName: match.name, matchedArtist: match.artist };
-    } catch (e) {
-      console.warn('⚠️ ' + sourceName + '搜索获取失败：', e.message);
-    }
+    } catch (e) { console.warn('⚠️ ' + sourceName + '搜索获取失败：', e.message); }
     return null;
   }
 
-  // 1. 先试网易云（免费歌曲多）
   let result = await trySource(ncSearch, ncGetSongUrl, 'nc');
   if (result) return res.json(result);
-
-  // 2. 再试 QQ
   result = await trySource(qqSearch, qqGetSongUrl, 'qq');
   if (result) return res.json(result);
-
-  // 3. iTunes 备用
   try {
     const results = await itunesSearch(name, artist);
-    if (results.length > 0 && results[0].previewUrl) {
-      return res.json({ url: results[0].previewUrl, from: 'itunes' });
-    }
-  } catch (e) {
-    console.warn('❌ iTunes 备用也失败：', e.message);
-  }
-
+    if (results.length > 0 && results[0].previewUrl) return res.json({ url: results[0].previewUrl, from: 'itunes' });
+  } catch (e) {}
   res.json({ url: null, error: '所有源均无法获取播放链接' });
 });
 
-// 聚合搜索音频流代理（绕过防盗链 403）
+// 聚合点歌：通过 play_music 接口获取真实播放链接
+app.post('/api/agg-play', async (req, res) => {
+  const { id } = req.body;
+  if (!id) return res.json({ ok: false, error: '缺少歌曲 id' });
+  try {
+    const sign = await getNgrokSign();
+    const r = await fetch(NGROK_BASE + '/play_music', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'ngrok-skip-browser-warning': 'true' },
+      body: JSON.stringify({ sign, id }),
+    });
+    if (!r.ok) throw new Error('play_music HTTP ' + r.status);
+    const resp = await r.json();
+    // 返回格式: { code: 200, data: { id, cover_url, duration, lyrics, mp3_url }, msg }
+    const d = resp.data;
+    if (d && d.mp3_url) {
+      res.json({
+        ok: true,
+        url: '/api/agg-proxy?url=' + encodeURIComponent(d.mp3_url),
+        cover: d.cover_url || '',
+        duration: d.duration || '',
+        lyrics: d.lyrics || '',
+      });
+    } else {
+      res.json({ ok: false, error: resp?.msg || 'play_music 未返回播放链接' });
+    }
+  } catch (e) {
+    console.warn('⚠️ 聚合点歌失败：', e.message);
+    res.json({ ok: false, error: e.message });
+  }
+});
+
+// 聚合音频流代理
 app.get('/api/agg-proxy', async (req, res) => {
   const url = req.query.url;
   if (!url) return res.status(400).send('missing url');
   try {
     const fetchHeaders = { 'User-Agent': 'Mozilla/5.0' };
-    // 支持 Range 请求（进度条拖拽 + 流式播放）
     if (req.headers.range) fetchHeaders['Range'] = req.headers.range;
     const r = await fetch(url, { headers: fetchHeaders });
     if (!r.ok) return res.status(r.status).send('upstream error');
@@ -505,7 +419,6 @@ app.get('/api/agg-proxy', async (req, res) => {
       if (cr) res.setHeader('Content-Range', cr);
       res.status(206);
     }
-    // Node.js 内置 fetch 的 body 是 Web Stream，需转 Node Stream
     const { Readable } = require('stream');
     Readable.fromWeb(r.body).pipe(res);
   } catch (e) {
@@ -514,300 +427,682 @@ app.get('/api/agg-proxy', async (req, res) => {
   }
 });
 
-// ─────────────────────────────────────────
-// 队列持久化（JSON 文件缓存）
-// ─────────────────────────────────────────
-const STATE_FILE = path.join(__dirname, '.state.json');
+// ─────────────────────────────────────────────────────────
+// 认证系统
+// ─────────────────────────────────────────────────────────
+const { supabase, signToken, verifyToken, registerUser, loginUser } = require('./db');
 
-function loadState() {
+// 认证中间件
+function authRequired(req, res, next) {
+  const token = req.headers.authorization?.replace('Bearer ', '');
+  if (!token) return res.status(401).json({ error: '请先登录' });
+  const payload = verifyToken(token);
+  if (!payload) return res.status(401).json({ error: '登录已过期，请重新登录' });
+  req.user = payload;
+  next();
+}
+
+// ── 注册 API ──
+app.post('/api/auth/register', async (req, res) => {
+  const { email, password, nickname } = req.body;
+  if (!email || !password) return res.json({ ok: false, msg: '邮箱和密码不能为空' });
+  if (password.length < 6) return res.json({ ok: false, msg: '密码至少6位' });
   try {
-    if (fs.existsSync(STATE_FILE)) {
-      const raw = JSON.parse(fs.readFileSync(STATE_FILE, 'utf-8'));
-      if (raw && Array.isArray(raw.queue)) {
-        console.log(`📂 从缓存恢复队列：${raw.queue.length} 首歌`);
-        return raw;
+    const user = await registerUser(email, password, nickname);
+    const token = signToken(user.userId, user.email, user.nickname);
+    res.json({ ok: true, token, user: { userId: user.userId, email: user.email, nickname: user.nickname } });
+  } catch (e) {
+    const msg = e.message || '注册失败';
+    res.json({ ok: false, msg: msg.includes('already registered') ? '该邮箱已注册' : msg });
+  }
+});
+
+// ── 登录 API ──
+app.post('/api/auth/login', async (req, res) => {
+  const { email, password } = req.body;
+  if (!email || !password) return res.json({ ok: false, msg: '邮箱和密码不能为空' });
+  try {
+    const user = await loginUser(email, password);
+    const token = signToken(user.userId, user.email, user.nickname);
+    res.json({ ok: true, token, user: { userId: user.userId, email: user.email, nickname: user.nickname } });
+  } catch (e) {
+    res.json({ ok: false, msg: '邮箱或密码错误' });
+  }
+});
+
+// ── 获取当前用户信息（直接从 JWT 返回，不查数据库）──
+app.get('/api/auth/me', authRequired, (req, res) => {
+  res.json({ ok: true, user: { userId: req.user.userId, email: req.user.email, nickname: req.user.nickname } });
+});
+
+// ── 修改昵称 ──
+app.put('/api/auth/nickname', authRequired, async (req, res) => {
+  const { nickname } = req.body;
+  if (!nickname || !nickname.trim()) return res.json({ ok: false, msg: '昵称不能为空' });
+  try {
+    await supabase.from('jb_users').update({ nickname: nickname.trim() }).eq('id', req.user.userId);
+    // 签发新 token（含新昵称）
+    const token = signToken(req.user.userId, req.user.email, nickname.trim());
+    res.json({ ok: true, token, nickname: nickname.trim() });
+  } catch (e) {
+    res.json({ ok: false, msg: '修改失败' });
+  }
+});
+
+// ─────────────────────────────────────────────────────────
+// 房间系统（Supabase 持久化 + 内存缓存）
+// ─────────────────────────────────────────────────────────
+
+// 内存缓存：roomName → roomObj（在线状态、实时队列等）
+const rooms = new Map();
+
+// ── Supabase 操作 ──────────────────────────────────────
+
+// 从 DB 创建房间记录
+async function dbCreateRoom(name, creatorId, password) {
+  const { data, error } = await supabase.from('rooms').upsert({
+    name, creator_id: creatorId || null,
+    password: password || null,
+    current_index: -1, is_playing: false,
+    "current_time": 0, uid_counter: 0, is_active: true,
+  }, { onConflict: 'name' }).select().single();
+  if (error) {
+    console.error('❌ dbCreateRoom 详细错误:', JSON.stringify(error, null, 2));
+    throw new Error(error.message || JSON.stringify(error));
+  }
+  return data;
+}
+
+// 更新房间播放状态
+async function dbSaveRoomState(roomId, state, uidCounter) {
+  const { error } = await supabase.from('rooms').update({
+    current_index: state.currentIndex,
+    is_playing: state.isPlaying,
+    "current_time": state.currentTime || 0,
+    uid_counter: uidCounter,
+  }).eq('id', roomId);
+  if (error) console.warn('⚠️ DB saveRoomState error:', error.message);
+}
+
+// 从 DB 加载房间（含歌曲队列）
+async function dbLoadRoom(name) {
+  const { data: roomData, error: rErr } = await supabase.from('rooms')
+    .select('*').eq('name', name).eq('is_active', true).single();
+  if (rErr || !roomData) return null;
+
+  const { data: songRows } = await supabase.from('songs')
+    .select('*').eq('room_id', roomData.id).order('sort_order', { ascending: true });
+
+  const queue = (songRows || []).map(s => ({
+    uid: s.uid, id: s.song_id, source: s.source,
+    name: s.name, artist: s.artist, album: s.album,
+    cover: s.cover, url: s.url, duration: s.duration,
+    requester: s.requester, _lyrics: s.lyrics || '',
+  }));
+
+  const { data: logRows } = await supabase.from('op_logs')
+    .select('*').eq('room_id', roomData.id)
+    .order('created_at', { ascending: false }).limit(100);
+
+  const opLogs = (logRows || []).reverse().map(l => ({
+    time: new Date(l.created_at).getTime(),
+    action: l.action, nickname: l.nickname, ip: l.ip, detail: l.detail,
+  }));
+
+  return {
+    roomId: roomData.id, name: roomData.name,
+    creatorId: roomData.creator_id,
+    password: roomData.password || null,
+    createdAt: new Date(roomData.created_at).getTime(),
+    state: {
+      queue,
+      currentIndex: roomData.current_index ?? -1,
+      isPlaying: roomData.is_playing && queue.length > 0 && roomData.current_index >= 0,
+      currentTime: roomData.current_time || 0,
+    },
+    uidCounter: roomData.uid_counter || 0,
+    opLogs,
+  };
+}
+
+// 添加歌曲到 DB
+async function dbAddSong(roomId, item, sortOrder) {
+  await supabase.from('songs').insert({
+    room_id: roomId, uid: item.uid, sort_order: sortOrder,
+    source: item.source, song_id: item.id, name: item.name,
+    artist: item.artist, album: item.album, cover: item.cover,
+    url: item.url, duration: item.duration, requester: item.requester,
+    lyrics: item._lyrics || '',
+  });
+}
+
+// 删除歌曲
+async function dbRemoveSong(roomId, uid) {
+  await supabase.from('songs').delete().eq('room_id', roomId).eq('uid', uid);
+}
+
+// 清空房间所有歌曲
+async function dbClearSongs(roomId) {
+  await supabase.from('songs').delete().eq('room_id', roomId);
+}
+
+// 更新歌曲排序
+async function dbUpdateSongOrder(roomId, queue) {
+  for (let i = 0; i < queue.length; i++) {
+    await supabase.from('songs').update({ sort_order: i })
+      .eq('room_id', roomId).eq('uid', queue[i].uid);
+  }
+}
+
+// 写入操作日志（异步，不阻塞）
+async function dbAddLog(roomId, userId, action, nickname, ip, detail) {
+  await supabase.from('op_logs').insert({
+    room_id: roomId, user_id: userId || null,
+    action, nickname: nickname || '匿名', ip: ip || '', detail: detail || '',
+  });
+}
+
+// 获取所有活跃房间列表
+async function dbListRooms() {
+  const { data, error } = await supabase.from('rooms')
+    .select('*').eq('is_active', true)
+    .order('created_at', { ascending: false });
+  if (error) { console.warn('⚠️ DB listRooms error:', error.message); return []; }
+  return data || [];
+}
+
+// 标记房间不活跃
+async function dbDeactivateRoom(roomId) {
+  await supabase.from('rooms').update({ is_active: false }).eq('id', roomId);
+}
+
+// ── 内存操作 ───────────────────────────────────────────
+
+async function getOrCreateRoom(name, creatorId, password) {
+  if (rooms.has(name)) return rooms.get(name);
+
+  const dbRoom = await dbLoadRoom(name);
+  if (dbRoom) {
+    const room = {
+      roomId: dbRoom.roomId, name: dbRoom.name,
+      creatorId: dbRoom.creatorId, createdAt: dbRoom.createdAt,
+      password: dbRoom.password || null,
+      state: dbRoom.state, uidCounter: dbRoom.uidCounter,
+      opLogs: dbRoom.opLogs, members: new Map(),
+    };
+    rooms.set(name, room);
+    console.log(`📂 房间「${name}」从 DB 恢复：${room.state.queue.length} 首歌`);
+    return room;
+  }
+
+  try {
+    const dbData = await dbCreateRoom(name, creatorId, password);
+    const room = {
+      roomId: dbData.id, name, creatorId: dbData.creator_id,
+      password: password || null,
+      createdAt: Date.now(),
+      state: { queue: [], currentIndex: -1, isPlaying: false, currentTime: 0 },
+      uidCounter: 0, opLogs: [], members: new Map(),
+    };
+    rooms.set(name, room);
+    return room;
+  } catch (e) {
+    console.error('❌ 创建房间写入数据库失败:', e.message);
+    throw new Error('创建房间失败：数据库写入错误');
+  }
+}
+
+function saveRoomState(room) {
+  if (!room || !room.roomId) return;
+  dbSaveRoomState(room.roomId, room.state, room.uidCounter).catch(e =>
+    console.warn('⚠️ saveRoomState failed:', e.message)
+  );
+}
+
+function broadcastToRoom(roomName, event, data) {
+  io.to('room:' + roomName).emit(event, data);
+}
+
+function addRoomLog(room, socket, action, nickname, detail) {
+  if (!room) return;
+  const ip = socket?.handshake?.headers?.['x-forwarded-for']?.split(',')[0]?.trim()
+          || socket?.handshake?.address?.replace('::ffff:', '') || 'unknown';
+  room.opLogs.push({ time: Date.now(), action, nickname: nickname || '匿名', ip, detail: detail || '' });
+  if (room.opLogs.length > 100) room.opLogs.splice(0, room.opLogs.length - 100);
+  broadcastToRoom(room.name, 'op_log', room.opLogs);
+  if (room.roomId && socket?._userId) {
+    dbAddLog(room.roomId, socket._userId, action, nickname, ip, detail).catch(() => {});
+  }
+}
+
+function getRoomOnline(roomName) {
+  const room = io.sockets.adapter.rooms.get('room:' + roomName);
+  return room ? room.size : 0;
+}
+
+// 转让房主给房间内第一个非管理员成员（优先选非管理员）
+function transferOwnership(room, oldOwnerNick) {
+  if (room.members.size === 0) return;
+  // 优先转让给非管理员（普通成员）
+  let newOwnerSocketId = null;
+  for (const [sid, member] of room.members) {
+    if (!member.isAdmin) {
+      newOwnerSocketId = sid;
+      break;
+    }
+  }
+  // 如果没有非管理员，选第一个
+  if (!newOwnerSocketId) {
+    newOwnerSocketId = room.members.keys().next().value;
+  }
+  const newMember = room.members.get(newOwnerSocketId);
+  room.creatorId = newMember.userId || newOwnerSocketId;
+  newMember.isAdmin = true;
+  broadcastToRoom(room.name, 'room:owner_changed', {
+    newOwner: newOwnerSocketId,
+    nickname: newMember.nickname || '匿名',
+    oldOwner: oldOwnerNick,
+  });
+  addRoomLog(room, null, '转让', '系统',
+    `房主「${oldOwnerNick}」已退出，管理权限转让给「${newMember.nickname || '匿名'}」`);
+  console.log(`🔑 房间「${room.name}」房主转让给 ${newMember.nickname || newOwnerSocketId}`);
+  // 通知对应 socket 更新 admin 状态
+  const targetSocket = io.sockets.sockets.get(newOwnerSocketId);
+  if (targetSocket) {
+    targetSocket._isAdmin = true;
+    targetSocket.emit('room:you_are_admin', { isAdmin: true });
+  }
+}
+
+// 延迟清理空房间（30秒）
+function scheduleCleanup(room, roomName) {
+  if (room.members.size > 0) return;
+  if (room._cleanupTimer) clearTimeout(room._cleanupTimer);
+  room._cleanupTimer = setTimeout(async () => {
+    if (room.members.size === 0) {
+      saveRoomState(room);
+      if (room.roomId) await dbDeactivateRoom(room.roomId).catch(() => {});
+      rooms.delete(room.name);
+      console.log(`🗑️ 房间「${room.name}」无人，已清理`);
+    }
+  }, 30000);
+}
+
+// ── 房间 REST API ─────────────────────────────────────
+
+// 获取房间列表（需登录）— 只显示内存中有且在线人数 > 0 的房间
+app.get('/api/rooms', authRequired, async (req, res) => {
+  try {
+    const list = [];
+    for (const [name, mem] of rooms) {
+      const online = getRoomOnline(name);
+      if (online > 0) {
+        list.push({
+          name,
+          creatorId: mem.creatorId,
+          createdAt: mem.createdAt,
+          online,
+          hasPassword: !!mem.password,
+          queueLen: mem.state.queue.length,
+          playing: mem.state.queue[mem.state.currentIndex]?.name || '',
+        });
       }
     }
-  } catch (e) {
-    console.warn('⚠️ 读取缓存失败，使用空队列:', e.message);
-  }
-  return null;
-}
+    console.log(`📋 /api/rooms: 内存 ${rooms.size} 个房间，在线 ${list.length} 个`);
+    res.json({ rooms: list });
+  } catch (e) { res.json({ rooms: [] }); }
+});
 
-function saveState() {
+// 创建房间（需登录）
+app.post('/api/rooms', authRequired, async (req, res) => {
+  const { name, password } = req.body;
+  const creatorId = req.user.userId;
+  if (!name || !name.trim()) return res.json({ ok: false, msg: '房间名不能为空' });
+  const roomName = name.trim();
+  if (roomName.length > 20) return res.json({ ok: false, msg: '房间名不能超过20个字符' });
+  if (/[\/\\?#&=]/.test(roomName)) return res.json({ ok: false, msg: '房间名包含非法字符' });
+  if (rooms.has(roomName)) return res.json({ ok: false, msg: '房间名已存在，请换一个' });
   try {
-    // 保存时去掉运行时临时字段，只保留必要数据
-    const data = {
-      queue: state.queue.map(s => ({
-        uid: s.uid,
-        id: s.id,
-        source: s.source,
-        name: s.name,
-        artist: s.artist,
-        album: s.album,
-        cover: s.cover,
-        url: s.url,
-        duration: s.duration,
-        requester: s.requester,
-        _lyrics: s._lyrics || '',
-      })),
-      currentIndex: state.currentIndex,
-      uidCounter: uidCounter,
-    };
-    fs.writeFileSync(STATE_FILE, JSON.stringify(data, null, 2));
-  } catch (e) {
-    console.warn('⚠️ 保存缓存失败:', e.message);
-  }
-}
+    await getOrCreateRoom(roomName, creatorId || '', password || null);
+    console.log(`🏠 房间「${roomName}」已创建${password ? '（已设密码）' : ''}`);
+    res.json({ ok: true, name: roomName });
+  } catch (e) { res.json({ ok: false, msg: '创建失败: ' + e.message }); }
+});
 
-// ─────────────────────────────────────────
-// Socket.io 事件处理（队列 & 播放控制）
-// ─────────────────────────────────────────
-const cached = loadState();
-
-const state = {
-  queue: cached ? cached.queue : [],
-  currentIndex: cached ? cached.currentIndex : -1,
-  isPlaying: cached ? (cached.queue.length > 0 && cached.currentIndex >= 0) : false,
-  currentTime: 0,
-};
-
-let uidCounter = cached ? cached.uidCounter : 0;
-
-function broadcastState() {
-  io.emit('state_sync', state);
-}
-
-// ── 操作日志 ─────────────────────────────────────
-const MAX_LOG = 100;
-const opLogs = []; // { time, action, nickname, ip, detail }
-
-function addLog(socket, action, nickname, detail) {
-  const ip = socket.handshake.headers['x-forwarded-for']?.split(',')[0]?.trim()
-          || socket.handshake.address?.replace('::ffff:', '') || 'unknown';
-  opLogs.push({ time: Date.now(), action, nickname: nickname || '匿名', ip, detail: detail || '' });
-  if (opLogs.length > MAX_LOG) opLogs.splice(0, opLogs.length - MAX_LOG);
-  io.emit('op_log', opLogs);
-}
-
-// 用户加入时推送状态
+// ─────────────────────────────────────────────────────────
+// Socket.io 事件处理（房间隔离版）
+// ─────────────────────────────────────────────────────────
 io.on('connection', (socket) => {
   console.log('🔌 用户连接:', socket.id);
-  io.emit('online_users', io.engine.clientsCount);
 
-  // 连接时推送当前状态 + 操作日志
-  socket.emit('state_sync', state);
-  socket.emit('op_log', opLogs);
+  // 从 handshake 的 token 中识别用户
+  const token = socket.handshake.auth?.token;
+  const payload = token ? verifyToken(token) : null;
 
-  // 昵称上报（前端连接后发送），回传 IP 供前端生成昵称
-  socket.on('join', ({ nickname }, callback) => {
-    const ip = socket.handshake.headers['x-forwarded-for']?.split(',')[0]?.trim()
-            || socket.handshake.address?.replace('::ffff:', '') || 'unknown';
-    socket._nick = nickname || '匿名';
-    if (callback) callback({ ip });
-    addLog(socket, '加入', nickname, '进入了点歌台');
+  socket._roomName = null;
+  socket._nick = payload?.nickname || '匿名';
+  socket._isAdmin = false;
+  socket._userId = payload?.userId || null;
+  socket._email = payload?.email || null;
+
+  // ── 加入房间 ──
+  socket.on('room:join', async ({ room: roomName, nickname, password }, callback) => {
+    if (!roomName) {
+      if (callback) callback({ ok: false, msg: '房间名不能为空' });
+      return;
+    }
+    // 先检查内存中是否已有该房间（可能在线）
+    const existingRoom = rooms.get(roomName);
+    const isCreator = existingRoom && (existingRoom.creatorId === socket._userId);
+    if (existingRoom && existingRoom.password && !isCreator) {
+      // 非房主需要密码验证
+      if (!password || password !== existingRoom.password) {
+        if (callback) callback({ ok: false, msg: '密码错误', needPassword: true });
+        return;
+      }
+    }
+    // 如果内存中没有但数据库有，需要加载（这种情况也校验密码）
+    if (!existingRoom) {
+      const dbRoom = await dbLoadRoom(roomName);
+      const isDbCreator = dbRoom && (dbRoom.creatorId === socket._userId);
+      if (dbRoom && dbRoom.password && !isDbCreator) {
+        if (!password || password !== dbRoom.password) {
+          if (callback) callback({ ok: false, msg: '密码错误', needPassword: true });
+          return;
+        }
+      }
+    }
+    if (socket._roomName) {
+      socket.leave('room:' + socket._roomName);
+      const oldRoom = rooms.get(socket._roomName);
+      if (oldRoom) oldRoom.members.delete(socket.id);
+    }
+    try {
+      const room = await getOrCreateRoom(roomName, socket.id);
+      socket.join('room:' + roomName);
+      socket._roomName = roomName;
+      socket._nick = nickname || '匿名';
+      const isOwner = room.creatorId === socket.id || room.creatorId === socket._userId;
+      if (isOwner) socket._isAdmin = true;
+      room.members.set(socket.id, { nickname: socket._nick, isAdmin: socket._isAdmin, userId: socket._userId });
+      socket.emit('room:joined', {
+        roomName, isOwner, isAdmin: socket._isAdmin,
+        state: room.state, opLogs: room.opLogs,
+      });
+      broadcastToRoom(roomName, 'online_users', getRoomOnline(roomName));
+      addRoomLog(room, socket, '加入', socket._nick, '进入了房间');
+      console.log(`🏠 ${socket._nick}(${socket.id}) 加入房间「${roomName}」`);
+      if (callback) callback({ ok: true, roomName, isOwner, isAdmin: socket._isAdmin });
+    } catch (e) {
+      if (callback) callback({ ok: false, msg: '加入房间失败: ' + e.message });
+    }
   });
 
-  // 点歌
-  socket.on('add_song', ({ song, nickname }, callback) => {
+  // ── 退出房间 ──
+  socket.on('room:leave', ({}, callback) => {
+    if (!socket._roomName) {
+      if (callback) callback({ ok: false });
+      return;
+    }
+    const roomName = socket._roomName;
+    const room = rooms.get(roomName);
+    if (room) {
+      const isOwner = (room.creatorId === socket._userId);
+      room.members.delete(socket.id);
+      addRoomLog(room, socket, '离开', socket._nick, '退出了房间');
+      broadcastToRoom(roomName, 'online_users', getRoomOnline(roomName));
+
+      // 房主退出：有人则转让，无人则延迟删除
+      if (isOwner) {
+        if (room.members.size > 0) {
+          transferOwnership(room, socket._nick);
+        } else {
+          scheduleCleanup(room, roomName);
+        }
+      } else if (room.members.size === 0) {
+        scheduleCleanup(room, roomName);
+      }
+    }
+    socket.leave('room:' + roomName);
+    socket._roomName = null;
+    socket._isAdmin = false;
+    if (callback) callback({ ok: true });
+  });
+
+  // ── 点歌（房间隔离） ──
+  socket.on('add_song', async ({ song, nickname }, callback) => {
+    if (!socket._roomName) {
+      if (callback) callback({ ok: false, msg: '未加入房间' });
+      return;
+    }
+    const room = rooms.get(socket._roomName);
+    if (!room) return;
     if (!song || !song.url) {
       if (callback) callback({ ok: false, msg: '无效的歌曲' });
       return;
     }
-    // 防重：同歌名同歌手只允许出现一次
-    const dup = state.queue.find(s =>
+    const dup = room.state.queue.find(s =>
       s.name.trim() === (song.name || '').trim() && s.artist.trim() === (song.artist || '').trim()
     );
     if (dup) {
-      io.emit('toast', { msg: `「${song.name}」已在播放队列中，不能重复添加`, type: 'warning' });
+      broadcastToRoom(socket._roomName, 'toast', { msg: `「${song.name}」已在播放队列中`, type: 'warning' });
       if (callback) callback({ ok: false, msg: '歌曲已在队列中' });
       return;
     }
-    const uid = ++uidCounter;
+    const uid = ++room.uidCounter;
     const item = {
-      uid,
-      id: song.id || '',
-      source: song.source || 'qq',
-      name: song.name,
-      artist: song.artist,
-      album: song.album || '',
-      cover: song.cover || '',
-      url: song.url,
-      duration: song.duration || 0,
-      requester: nickname || '匿名',
-      _lyrics: song._lyrics || '', // 聚合搜索的歌词原文
+      uid, id: song.id || '', source: song.source || 'qq',
+      name: song.name, artist: song.artist, album: song.album || '',
+      cover: song.cover || '', url: song.url, duration: song.duration || 0,
+      requester: nickname || '匿名', _lyrics: song._lyrics || '',
     };
-    state.queue.push(item);
-    saveState();
-    broadcastState();
-    addLog(socket, '点歌', nickname, `点了「${song.name}」- ${song.artist || ''}`);
-    io.emit('toast', { msg: `${nickname || '匿名'} 点了「${song.name}」`, type: 'success' });
+    room.state.queue.push(item);
+    // 持久化到 DB
+    if (room.roomId) {
+      await dbAddSong(room.roomId, item, room.state.queue.length - 1).catch(() => {});
+      saveRoomState(room);
+    }
+    broadcastToRoom(socket._roomName, 'state_sync', room.state);
+    addRoomLog(room, socket, '点歌', nickname, `点了「${song.name}」- ${song.artist || ''}`);
+    broadcastToRoom(socket._roomName, 'toast', { msg: `${nickname || '匿名'} 点了「${song.name}」`, type: 'success' });
     if (callback) callback({ ok: true });
 
-    // 如果当前没有在播放，自动开始
-    if (state.queue.length === 1 && state.currentIndex < 0) {
-      state.currentIndex = 0;
-      state.isPlaying = true;
-      state.currentTime = 0;
-      broadcastState();
+    if (room.state.queue.length === 1 && room.state.currentIndex < 0) {
+      room.state.currentIndex = 0;
+      room.state.isPlaying = true;
+      room.state.currentTime = 0;
+      broadcastToRoom(socket._roomName, 'state_sync', room.state);
     }
   });
 
-  // 上报播放进度（防抖：每次覆盖前一个定时器）
+  // ── 上报播放进度 ──
   socket._reportTimer = null;
   socket.on('report_time', ({ uid, time }) => {
-    if (state.queue[state.currentIndex]?.uid === uid) {
-      state.currentTime = time;
-      // 防抖广播，减少频繁推送
+    if (!socket._roomName) return;
+    const room = rooms.get(socket._roomName);
+    if (!room) return;
+    if (room.state.queue[room.state.currentIndex]?.uid === uid) {
+      room.state.currentTime = time;
       if (socket._reportTimer) clearTimeout(socket._reportTimer);
       socket._reportTimer = setTimeout(() => {
-        io.emit('time_sync', { time: state.currentTime });
+        broadcastToRoom(socket._roomName, 'time_sync', { time: room.state.currentTime });
       }, 3000);
     }
   });
 
-  // 播放/暂停（仅管理员）
+  // ── 播放/暂停（仅管理员） ──
   socket.on('toggle_play', ({ nickname }) => {
-    if (!socket._isAdmin) return;
-    state.isPlaying = !state.isPlaying;
-    addLog(socket, state.isPlaying ? '播放' : '暂停', nickname, '');
-    broadcastState();
+    if (!socket._isAdmin || !socket._roomName) return;
+    const room = rooms.get(socket._roomName);
+    if (!room) return;
+    room.state.isPlaying = !room.state.isPlaying;
+    addRoomLog(room, socket, room.state.isPlaying ? '播放' : '暂停', nickname, '');
+    saveRoomState(room);
+    broadcastToRoom(socket._roomName, 'state_sync', room.state);
   });
 
-  // 下一首（仅管理员）
+  // ── 下一首（仅管理员） ──
   socket.on('next_song', ({ nickname }) => {
-    if (!socket._isAdmin) return;
-    const cur = state.queue[state.currentIndex];
-    addLog(socket, '切歌', nickname, cur ? `跳过「${cur.name}」` : '切到下一首');
-    if (state.currentIndex < state.queue.length - 1) {
-      state.currentIndex++;
-      state.currentTime = 0;
-      state.isPlaying = true;
-    } else if (state.queue.length > 0) {
-      // 循环到第一首
-      state.currentIndex = 0;
-      state.currentTime = 0;
-      state.isPlaying = true;
+    if (!socket._isAdmin || !socket._roomName) return;
+    const room = rooms.get(socket._roomName);
+    if (!room) return;
+    const cur = room.state.queue[room.state.currentIndex];
+    addRoomLog(room, socket, '切歌', nickname, cur ? `跳过「${cur.name}」` : '切到下一首');
+    if (room.state.currentIndex < room.state.queue.length - 1) {
+      room.state.currentIndex++;
+    } else if (room.state.queue.length > 0) {
+      room.state.currentIndex = 0;
     }
-    saveState();
-    broadcastState();
+    room.state.currentTime = 0;
+    room.state.isPlaying = true;
+    saveRoomState(room);
+    broadcastToRoom(socket._roomName, 'state_sync', room.state);
   });
 
-  // 歌曲播放结束 → 自动切下一首，并移除已播放的歌曲
-  socket.on('song_ended', ({ uid }) => {
-    if (state.queue[state.currentIndex]?.uid === uid) {
-      const ended = state.queue[state.currentIndex];
-      addLog(socket, '播完', ended ? ended.requester : '系统', `「${ended?.name || ''}」播放结束`);
-      state.queue.splice(state.currentIndex, 1);
-
-      if (state.queue.length === 0) {
-        state.currentIndex = -1;
-        state.isPlaying = false;
-        state.currentTime = 0;
+  // ── 歌曲播放结束 ──
+  socket.on('song_ended', async ({ uid }) => {
+    if (!socket._roomName) return;
+    const room = rooms.get(socket._roomName);
+    if (!room) return;
+    if (room.state.queue[room.state.currentIndex]?.uid === uid) {
+      const ended = room.state.queue[room.state.currentIndex];
+      addRoomLog(room, socket, '播完', ended ? ended.requester : '系统', `「${ended?.name || ''}」播放结束`);
+      if (room.roomId) await dbRemoveSong(room.roomId, uid).catch(() => {});
+      room.state.queue.splice(room.state.currentIndex, 1);
+      if (room.state.queue.length === 0) {
+        room.state.currentIndex = -1;
+        room.state.isPlaying = false;
+        room.state.currentTime = 0;
       } else {
-        if (state.currentIndex >= state.queue.length) {
-          state.currentIndex = 0;
-        }
-        state.currentTime = 0;
-        state.isPlaying = true;
-        state.playResetUid = state.queue[state.currentIndex]?.uid || Date.now();
+        if (room.state.currentIndex >= room.state.queue.length) room.state.currentIndex = 0;
+        room.state.currentTime = 0;
+        room.state.isPlaying = true;
+        room.state.playResetUid = room.state.queue[room.state.currentIndex]?.uid || Date.now();
       }
-      saveState();
-      broadcastState();
+      saveRoomState(room);
+      broadcastToRoom(socket._roomName, 'state_sync', room.state);
     }
   });
 
-  // 删除歌曲（仅管理员）
-  socket.on('remove_song', ({ uid, nickname }) => {
-    if (!socket._isAdmin) return;
-    const idx = state.queue.findIndex(s => s.uid === uid);
-    if (idx !== -1) addLog(socket, '删歌', nickname, `移除了「${state.queue[idx].name}」`);
+  // ── 删除歌曲（仅管理员） ──
+  socket.on('remove_song', async ({ uid, nickname }) => {
+    if (!socket._isAdmin || !socket._roomName) return;
+    const room = rooms.get(socket._roomName);
+    if (!room) return;
+    const idx = room.state.queue.findIndex(s => s.uid === uid);
     if (idx === -1) return;
-    state.queue.splice(idx, 1);
-
-    if (idx === state.currentIndex) {
-      if (state.queue.length === 0) {
-        state.currentIndex = -1;
-        state.isPlaying = false;
-        state.currentTime = 0;
+    addRoomLog(room, socket, '删歌', nickname, `移除了「${room.state.queue[idx].name}」`);
+    if (room.roomId) await dbRemoveSong(room.roomId, uid).catch(() => {});
+    room.state.queue.splice(idx, 1);
+    if (idx === room.state.currentIndex) {
+      if (room.state.queue.length === 0) {
+        room.state.currentIndex = -1; room.state.isPlaying = false; room.state.currentTime = 0;
       } else {
-        if (state.currentIndex >= state.queue.length) {
-          state.currentIndex = 0;
-        }
-        state.currentTime = 0;
-        state.isPlaying = true;
-        state.playResetUid = state.queue[state.currentIndex]?.uid || Date.now();
+        if (room.state.currentIndex >= room.state.queue.length) room.state.currentIndex = 0;
+        room.state.currentTime = 0; room.state.isPlaying = true;
+        room.state.playResetUid = room.state.queue[room.state.currentIndex]?.uid || Date.now();
       }
-    } else if (idx < state.currentIndex) {
-      state.currentIndex--;
+    } else if (idx < room.state.currentIndex) {
+      room.state.currentIndex--;
     }
-    saveState();
-    broadcastState();
+    saveRoomState(room);
+    broadcastToRoom(socket._roomName, 'state_sync', room.state);
   });
 
-  // 清空队列（仅管理员）
-  socket.on('clear_queue', ({ nickname }) => {
-    if (!socket._isAdmin) return;
-    addLog(socket, '清空', nickname, '清空了播放队列');
-    state.queue = [];
-    state.currentIndex = -1;
-    state.isPlaying = false;
-    state.currentTime = 0;
-    saveState();
-    broadcastState();
+  // ── 清空队列（仅管理员） ──
+  socket.on('clear_queue', async ({ nickname }) => {
+    if (!socket._isAdmin || !socket._roomName) return;
+    const room = rooms.get(socket._roomName);
+    if (!room) return;
+    addRoomLog(room, socket, '清空', nickname, '清空了播放队列');
+    room.state.queue = [];
+    room.state.currentIndex = -1;
+    room.state.isPlaying = false;
+    room.state.currentTime = 0;
+    if (room.roomId) await dbClearSongs(room.roomId).catch(() => {});
+    saveRoomState(room);
+    broadcastToRoom(socket._roomName, 'state_sync', room.state);
   });
 
-  // 调整队列顺序（仅管理员）
-  socket.on('reorder_queue', ({ nickname, fromIndex, toIndex }) => {
-    if (!socket._isAdmin) return;
-    const q = state.queue;
+  // ── 调整队列顺序（仅管理员） ──
+  socket.on('reorder_queue', async ({ nickname, fromIndex, toIndex }) => {
+    if (!socket._isAdmin || !socket._roomName) return;
+    const room = rooms.get(socket._roomName);
+    if (!room) return;
+    const q = room.state.queue;
     if (!q.length || fromIndex < 0 || toIndex < 0 || fromIndex >= q.length || toIndex >= q.length) return;
-    // 不允许移动正在播放的歌曲
-    if (fromIndex === state.currentIndex || toIndex === state.currentIndex) return;
-
-    // 从队列中取出元素，插入到新位置
+    if (fromIndex === room.state.currentIndex || toIndex === room.state.currentIndex) return;
     const [moved] = q.splice(fromIndex, 1);
-
-    // 如果移动发生在 currentIndex 之前，需要调整 currentIndex
-    if (fromIndex < state.currentIndex && toIndex >= state.currentIndex) {
-      state.currentIndex--;
-    } else if (fromIndex > state.currentIndex && toIndex <= state.currentIndex) {
-      state.currentIndex++;
-    }
-
+    if (fromIndex < room.state.currentIndex && toIndex >= room.state.currentIndex) room.state.currentIndex--;
+    else if (fromIndex > room.state.currentIndex && toIndex <= room.state.currentIndex) room.state.currentIndex++;
     q.splice(toIndex, 0, moved);
-
-    saveState();
-    broadcastState();
-    addLog(socket, '排序', nickname, `将「${moved.name}」移到了第 ${toIndex + 1} 位`);
+    if (room.roomId) dbUpdateSongOrder(room.roomId, q).catch(() => {});
+    broadcastToRoom(socket._roomName, 'state_sync', room.state);
+    addRoomLog(room, socket, '排序', nickname, `将「${moved.name}」移到了第 ${toIndex + 1} 位`);
   });
 
-  // 管理员登录
+  // ── 管理员登录（房间内密码登录，仅房主之外的人需要） ──
   socket.on('admin_login', ({ password }, callback) => {
     if (password === ADMIN_PASSWORD) {
       socket._isAdmin = true;
+      const room = rooms.get(socket._roomName);
+      if (room) room.members.get(socket.id).isAdmin = true;
       if (callback) callback({ ok: true });
     } else {
       if (callback) callback({ ok: false });
     }
   });
 
-  // 断开连接
-  socket.on('disconnect', () => {
+  // ── 断开连接 ──
+  socket.on('disconnect', async () => {
     console.log('🔌 用户断开:', socket.id);
-    addLog(socket, '离开', socket._nick || '匿名', '断开了连接');
-    io.emit('online_users', io.engine.clientsCount);
+    if (socket._roomName) {
+      const room = rooms.get(socket._roomName);
+      if (room) {
+        const isOwner = (room.creatorId === socket._userId);
+        room.members.delete(socket.id);
+        addRoomLog(room, socket, '离开', socket._nick, '断开了连接');
+        broadcastToRoom(socket._roomName, 'online_users', getRoomOnline(socket._roomName));
+
+        // 房主断开：有人则转让，无人则延迟删除
+        if (isOwner) {
+          if (room.members.size > 0) {
+            transferOwnership(room, socket._nick);
+          } else {
+            scheduleCleanup(room, socket._roomName);
+          }
+        } else if (room.members.size === 0) {
+          scheduleCleanup(room, socket._roomName);
+        }
+      }
+    }
   });
 });
+
+// ─────────────────────────────────────────
+// 页面路由
+// ─────────────────────────────────────────
+
+// 默认跳转到大厅
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'lobby.html'));
+});
+
+// 房间播放页
+app.get('/room/:name', (req, res) => {
+  res.sendFile(path.join(__dirname, 'index.html'));
+});
+
+// ── 静态文件（放在页面路由之后）─────────────────────────────
+app.use(express.static(path.join(__dirname)));
 
 // ─────────────────────────────────────────
 // 启动
 // ─────────────────────────────────────────
 const PORT = process.env.PORT || 3000;
-
-// Railway 需要监听 '::' 或 '0.0.0.0'
 const HOST = process.env.RAILWAY_ENVIRONMENT ? '::' : '0.0.0.0';
 
 server.listen(PORT, HOST, () => {
   console.log(`🎵 三源点歌台已启动：端口 ${PORT}`);
+  console.log(`🏠 房间系统已启用：访问 / 进入大厅`);
 });

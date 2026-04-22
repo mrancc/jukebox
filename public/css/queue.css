@@ -1,0 +1,134 @@
+#queue-list {
+  max-height: 490px;
+  overflow-y: auto;
+}
+
+.qi {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border);
+  transition: var(--t);
+}
+
+.qi:last-child {
+  border-bottom: none;
+}
+
+.qi.cur {
+  background: rgba(var(--accent-rgb), .1);
+  border-left: 3px solid var(--accent);
+}
+
+.qnum {
+  width: 18px;
+  text-align: center;
+  font-size: .74rem;
+  color: var(--text2);
+  flex-shrink: 0;
+}
+
+.qnum.play {
+  color: var(--accent);
+}
+
+.qcover {
+  width: 36px;
+  height: 36px;
+  border-radius: 5px;
+  object-fit: cover;
+  background: var(--surface2);
+  flex-shrink: 0;
+}
+
+.qcover-ph {
+  width: 36px;
+  height: 36px;
+  border-radius: 5px;
+  background: var(--surface2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: .9rem;
+  flex-shrink: 0;
+}
+
+.qinfo {
+  flex: 1;
+  min-width: 0;
+}
+
+.qname {
+  font-size: .83rem;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.qsub {
+  font-size: .71rem;
+  color: var(--text2);
+}
+
+.qreq {
+  font-size: .7rem;
+  color: var(--accent);
+  background: rgba(var(--accent-rgb), .1);
+  border-radius: 4px;
+  padding: 1px 6px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.btn-del {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text2);
+  font-size: .88rem;
+  padding: 4px;
+  border-radius: 4px;
+  transition: var(--t);
+  flex-shrink: 0;
+  display: none;
+}
+
+.adm .btn-del {
+  display: block;
+}
+
+.btn-del:hover {
+  color: var(--accent2);
+}
+
+.qempty {
+  padding: 48px 20px;
+  text-align: center;
+  color: var(--text2);
+  font-size: .85rem;
+}
+
+/* 拖拽排序样式 */
+.adm .qi:not(.cur) {
+  cursor: grab;
+}
+
+.adm .qi:not(.cur):active {
+  cursor: grabbing;
+}
+
+.qi.dragging {
+  opacity: 0.4;
+  background: rgba(var(--accent-rgb), .08);
+}
+
+.qi.drag-over {
+  border-top: 2px solid var(--accent);
+}
+
+.qempty .bi {
+  font-size: 3rem;
+  margin-bottom: 12px;
+}
