@@ -22,12 +22,14 @@
   <link rel="stylesheet" href="/public/css/modal.css">
   <link rel="stylesheet" href="/public/css/log.css">
   <link rel="stylesheet" href="/public/css/room.css">
+  <link rel="stylesheet" href="/public/css/mobile.css">
   <!-- Three.js CDN -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 </head>
 
 <body>
   <canvas id="bg-canvas"></canvas>
+  <canvas id="cosmos-canvas" style="display:none"></canvas>
 
   <header>
     <div class="logo">🎵 Bandstand</div>
@@ -36,6 +38,7 @@
       <span id="oc">0</span> 人在线
       <button class="theme-btn" id="btn-theme" onclick="toggleTheme()">🎨 <span class="theme-name"
           id="theme-name">极光</span></button>
+      <button class="btn-hdr" id="btn-bg" onclick="toggleBg()" title="切换背景动画">🌌 星球</button>
       <button class="btn-hdr" id="btn-adm" onclick="openAdminModal()">管理员</button>
       <button class="btn-hdr on" id="btn-logout" onclick="adminLogout()" style="display:none">退出管理</button>
     </div>
@@ -212,11 +215,48 @@
   <script src="/public/js/admin.js"></script>
   <script src="/public/js/theme.js"></script>
   <script src="/public/js/visualizer.js"></script>
+  <script src="/public/js/cosmos.js"></script>
   <script src="/public/js/lyric-fly.js"></script>
   <script src="/public/js/click-burst.js"></script>
 
   <!-- 页面初始化：加入房间 -->
   <script>
+    // ── 背景模式切换 ──
+    let bgMode = localStorage.getItem('jk_bg') || 'planet'; // planet | cosmos
+    const BG_LABELS = { planet: '🌌 星球', cosmos: '🌀 宇宙' };
+
+    function toggleBg() {
+      const newMode = bgMode === 'planet' ? 'cosmos' : 'planet';
+      applyBgMode(newMode);
+    }
+
+    function applyBgMode(mode) {
+      bgMode = mode;
+      localStorage.setItem('jk_bg', mode);
+      const btn = document.getElementById('btn-bg');
+      if (btn) btn.textContent = BG_LABELS[mode];
+      const bgCanvas = document.getElementById('bg-canvas');
+      const cosmosCanvas = document.getElementById('cosmos-canvas');
+      if (mode === 'cosmos') {
+        if (bgCanvas) bgCanvas.style.display = 'none';
+        if (cosmosCanvas) cosmosCanvas.style.display = 'block';
+        // 通知 cosmos 开始动画（第一次启动）
+        if (window._cosmos) window._cosmos.start();
+      } else {
+        if (bgCanvas) bgCanvas.style.display = 'block';
+        if (cosmosCanvas) cosmosCanvas.style.display = 'none';
+        // 通知 cosmos 暂停（省性能）
+        if (window._cosmos) window._cosmos.stop();
+      }
+    }
+
+    // 初始应用
+    document.getElementById('btn-bg').textContent = BG_LABELS[bgMode];
+    if (bgMode === 'cosmos') {
+      // 等脚本全部加载完再切换
+      setTimeout(function() { applyBgMode('cosmos'); }, 100);
+    }
+
     // 页面加载后自动加入房间
     document.addEventListener('DOMContentLoaded', function() {
       // 初始化房间 UI

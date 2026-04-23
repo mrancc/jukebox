@@ -3,14 +3,16 @@
   const canvas = document.getElementById('bg-canvas');
   if (!canvas || typeof THREE === 'undefined') return;
 
-  const ap = window.ap;
-  ap.crossOrigin = 'anonymous';
+  const ap = window.ap || null; // 大厅页面无播放器，ap 可能为 null
+  if (ap) ap.crossOrigin = 'anonymous';
 
-  // Web Audio 延迟初始化
+  let _running = true; // 是否在运行
+
+  // Web Audio 延迟初始化（无播放器时跳过）
   let audioCtx = null, analyser = null, freqData = null, audioSource = null, audioInited = false;
 
   function connectAudio() {
-    if (audioInited) return;
+    if (audioInited || !ap) return;
     audioInited = true;
     try {
       audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -30,10 +32,12 @@
   }
   document.addEventListener('click', onFirstInteraction);
   document.addEventListener('touchstart', onFirstInteraction);
-  ap.addEventListener('play', () => {
-    if (!audioInited) connectAudio();
-    if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
-  });
+  if (ap) {
+    ap.addEventListener('play', () => {
+      if (!audioInited) connectAudio();
+      if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+    });
+  }
 
   // Three.js 场景
   const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
@@ -278,6 +282,7 @@ vec3 hsv2rgb(vec3 c) {
   let smoothBass = 0, smoothMid = 0, smoothHigh = 0, smoothTotal = 0;
 
   function animate() {
+    if (!_running) return;
     requestAnimationFrame(animate);
 
     if (analyser && freqData) analyser.getByteFrequencyData(freqData);
@@ -343,5 +348,19 @@ vec3 hsv2rgb(vec3 c) {
       cFirefly = [...p.firefly];
       fMat.uniforms.uColor.value.setRGB(cFirefly[0], cFirefly[1], cFirefly[2]);
     }
+  };
+
+  // ── 生命周期控制 ──
+  window._visualizer = {
+    stop: function () {
+      _running = false;
+    },
+    start: function () {
+      if (!_running) {
+        _running = true;
+        animate();
+      }
+    },
+    updateTheme: window._updateParticleTheme,
   };
 })();

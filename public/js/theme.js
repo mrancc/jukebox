@@ -42,6 +42,7 @@ function applyTheme(theme) {
   const btn = document.getElementById('btn-theme');
   if (btn) btn.innerHTML = `${THEME_ICONS[theme]} <span class="theme-name">${THEME_NAMES[theme]}</span>`;
   window._updateParticleTheme && window._updateParticleTheme(theme);
+  window._cosmos && window._cosmos.updateTheme(theme);
   window._updateClickTheme && window._updateClickTheme(theme);
   window._updateLyricPalette && window._updateLyricPalette(theme);
 }

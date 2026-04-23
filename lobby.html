@@ -12,10 +12,15 @@
   <link rel="stylesheet" href="/public/css/button.css?v=4">
   <link rel="stylesheet" href="/public/css/modal.css?v=5">
   <link rel="stylesheet" href="/public/css/auth.css?v=4">
+  <link rel="stylesheet" href="/public/css/mobile.css">
   <style id="theme-light" media="none"></style>
+  <!-- Three.js CDN -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 </head>
 <body>
-  <!-- 背景装饰光晕 -->
+  <!-- Three.js 背景 canvas -->
+  <canvas id="bg-canvas"></canvas>
+  <!-- 背景装饰光晕（叠在 canvas 上，保留氛围感） -->
   <div class="lobby-bg-orb lobby-bg-orb--1"></div>
   <div class="lobby-bg-orb lobby-bg-orb--2"></div>
 
@@ -97,5 +102,6 @@
   <script src="/public/js/theme.js?v=7"></script>
   <script src="/public/js/auth.js?v=7"></script>
   <script src="/public/js/lobby.js?v=7"></script>
+  <script src="/public/js/visualizer.js"></script>
 </body>
 </html>

@@ -2,6 +2,14 @@
    Lobby（房间大厅）样式 — Modern Glassmorphism
    ───────────────────────────────────────── */
 
+/* 背景 canvas */
+#bg-canvas {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+
 /* 页面底色 */
 body {
   background: var(--bg, #09090b);
@@ -17,6 +25,8 @@ body {
   display: flex;
   flex-direction: column;
   gap: 20px;
+  position: relative;
+  z-index: 2;
 }
 
 /* ── 背景装饰 ── */
@@ -25,7 +35,7 @@ body {
   border-radius: 50%;
   filter: blur(100px);
   pointer-events: none;
-  z-index: -1;
+  z-index: 1;
   opacity: 0.5;
 }
 

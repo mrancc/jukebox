@@ -1,0 +1,540 @@
+/* ─────────────────────────────────────────
+   Mobile Responsive — 移动端自适应布局
+   覆盖所有页面的 768px / 600px 断点适配
+   ───────────────────────────────────────── */
+
+/* ════════════════════════════════════════
+   @media max-width: 768px — 平板竖屏 / 大手机
+   ════════════════════════════════════════ */
+@media (max-width: 768px) {
+
+  /* ── Header ── */
+  header {
+    padding: 10px 12px;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  .logo {
+    font-size: 1rem;
+  }
+
+  .hstatus {
+    gap: 6px;
+    margin-left: auto;
+  }
+
+  .btn-hdr {
+    padding: 4px 8px;
+    font-size: .72rem;
+  }
+
+  .theme-btn {
+    padding: 4px 8px;
+    font-size: .72rem;
+  }
+
+  /* ── 搜索区域 ── */
+  .nk-row {
+    padding: 8px 12px;
+    gap: 6px;
+  }
+
+  .nk-inp {
+    width: 100px;
+    font-size: .78rem;
+    padding: 5px 8px;
+  }
+
+  .src-row {
+    padding: 10px 12px;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+
+  .src-inp {
+    flex: 1 1 100%;
+    min-width: 0;
+    font-size: .88rem;
+  }
+
+  .src-filter {
+    flex: 1;
+    justify-content: center;
+  }
+
+  .src-opt {
+    flex: 1;
+    text-align: center;
+    padding: 6px 0;
+    font-size: .74rem;
+  }
+
+  .btn.btn-p {
+    flex: 0 0 auto;
+    padding: 6px 14px;
+    font-size: .82rem;
+  }
+
+  /* ── 搜索 Tab ── */
+  .stabs {
+    gap: 4px;
+  }
+
+  .stab {
+    padding: 3px 8px;
+    font-size: .7rem;
+  }
+
+  /* ── 搜索结果 ── */
+  .si {
+    padding: 8px 12px;
+    gap: 8px;
+  }
+
+  .scover, .scover-ph {
+    width: 38px;
+    height: 38px;
+  }
+
+  .sname {
+    font-size: .84rem;
+  }
+
+  .btn-add {
+    padding: 4px 10px;
+    font-size: .74rem;
+  }
+
+  #search-results {
+    max-height: 300px;
+  }
+
+  /* ── 热门推荐 ── */
+  .hot-item {
+    padding: 6px 12px;
+    gap: 8px;
+  }
+
+  .hot-tabs {
+    gap: 2px;
+  }
+
+  .htab {
+    padding: 3px 8px;
+    font-size: .72rem;
+  }
+
+  .hot-cover, .hot-cover-ph {
+    width: 34px;
+    height: 34px;
+  }
+
+  .hot-name {
+    font-size: .82rem;
+  }
+
+  .hot-add {
+    width: 26px;
+    height: 26px;
+    font-size: .9rem;
+  }
+
+  #hot-list {
+    max-height: 350px;
+  }
+
+  /* ── 播放队列 ── */
+  #queue-list {
+    max-height: 350px;
+  }
+
+  .qi {
+    padding: 8px 12px;
+    gap: 8px;
+  }
+
+  .qcover, .qcover-ph {
+    width: 32px;
+    height: 32px;
+  }
+
+  .qname {
+    font-size: .8rem;
+  }
+
+  /* ── 底部播放栏 ── */
+  #pbar {
+    padding: 10px 12px;
+  }
+
+  .pcover {
+    width: 42px;
+    height: 42px;
+  }
+
+  .pi {
+    gap: 10px;
+  }
+
+  .cbtn {
+    width: 30px;
+    height: 30px;
+    font-size: 1rem;
+    padding: 5px;
+  }
+
+  .cbtn.pbtn {
+    font-size: .85rem;
+  }
+
+  .vol-slider {
+    width: 50px;
+  }
+
+  /* ── 操作日志面板 ── */
+  .log-panel {
+    width: 280px;
+    max-height: 400px;
+    right: 8px;
+  }
+
+  .log-fab {
+    right: 10px;
+    width: 36px;
+    height: 36px;
+    font-size: 16px;
+  }
+
+  /* ── 管理员弹窗 ── */
+  .ov {
+    padding: 16px;
+  }
+
+  .mb {
+    padding: 22px;
+  }
+
+  /* ── 歌词弹窗 ── */
+  .lyric-modal-hd {
+    padding: 16px 16px 0;
+    gap: 10px;
+  }
+
+  .lyric-modal-cover {
+    width: 48px;
+    height: 48px;
+  }
+
+  .lyric-modal-name {
+    font-size: 1rem;
+  }
+
+  .lyric-modal-body {
+    padding: 16px 16px 32px;
+  }
+
+  .lyric-modal-line {
+    padding: 8px 0;
+    font-size: .92rem;
+  }
+
+  .lyric-modal-line.active {
+    font-size: 1.02rem;
+  }
+
+  .lyric-modal-bar {
+    padding: 8px 16px;
+  }
+
+  /* ── 房间信息 ── */
+  .room-tag {
+    max-width: 140px;
+    font-size: .78rem;
+    padding: 3px 10px;
+  }
+}
+
+/* ════════════════════════════════════════
+   @media max-width: 600px — 手机
+   ════════════════════════════════════════ */
+@media (max-width: 600px) {
+
+  /* ── 底部播放栏 ── */
+  .pw {
+    display: none;
+  }
+
+  .plyrics {
+    display: none;
+  }
+
+  .pinfo-left {
+    max-width: none;
+  }
+
+  .pi {
+    gap: 8px;
+  }
+
+  .vol-slider {
+    width: 60px;
+  }
+
+  /* ── 大厅页面 ── */
+  .lobby-header {
+    padding: 16px 16px 8px;
+  }
+
+  .lobby-logo .logo-icon {
+    font-size: 1.8rem;
+  }
+
+  .lobby-logo h1 {
+    font-size: 1.4rem;
+  }
+
+  .nickname-section input {
+    width: 150px;
+  }
+
+  /* ── 认证区域 ── */
+  .auth-section {
+    padding: 16px !important;
+  }
+}
+
+/* ════════════════════════════════════════
+   @media max-width: 480px — 小手机
+   ════════════════════════════════════════ */
+@media (max-width: 480px) {
+
+  /* ── Header ── */
+  header {
+    padding: 8px 10px;
+    gap: 6px;
+  }
+
+  .logo {
+    font-size: .9rem;
+  }
+
+  .hstatus {
+    gap: 4px;
+  }
+
+  /* 隐藏在线人数文字，只保留数字或图标 */
+  .hstatus span:first-child {
+    font-size: .72rem;
+  }
+
+  .btn-hdr {
+    padding: 4px 6px;
+    font-size: .68rem;
+  }
+
+  .theme-btn {
+    padding: 4px 6px;
+    font-size: .68rem;
+  }
+
+  /* ── 搜索区域 ── */
+  .nk-row {
+    padding: 6px 10px;
+  }
+
+  .nk-inp {
+    width: 90px;
+    font-size: .76rem;
+  }
+
+  .src-row {
+    padding: 8px 10px;
+  }
+
+  .src-opt {
+    font-size: .7rem;
+    padding: 5px 0;
+  }
+
+  /* ── 搜索结果 ── */
+  .sdur {
+    display: none;
+  }
+
+  .si {
+    padding: 7px 10px;
+    gap: 6px;
+  }
+
+  #search-results {
+    max-height: 250px;
+  }
+
+  /* ── 热门推荐 ── */
+  .hot-dur {
+    display: none;
+  }
+
+  .hot-item {
+    padding: 5px 10px;
+    gap: 6px;
+  }
+
+  #hot-list {
+    max-height: 300px;
+  }
+
+  /* ── 播放队列 ── */
+  .qreq {
+    display: none;
+  }
+
+  #queue-list {
+    max-height: 300px;
+  }
+
+  .qi {
+    padding: 7px 10px;
+    gap: 6px;
+  }
+
+  /* ── 底部播放栏 ── */
+  #pbar {
+    padding: 8px 10px;
+  }
+
+  .pcover {
+    width: 36px;
+    height: 36px;
+    border-radius: 6px;
+  }
+
+  .pi {
+    gap: 8px;
+  }
+
+  .pinfo-left {
+    max-width: 100px;
+  }
+
+  .pname {
+    font-size: .8rem;
+  }
+
+  .partist {
+    font-size: .68rem;
+  }
+
+  .cbtn {
+    width: 28px;
+    height: 28px;
+    font-size: .9rem;
+  }
+
+  .cbtn.pbtn {
+    font-size: .8rem;
+  }
+
+  .vol-wrap {
+    display: none;
+  }
+
+  /* ── 操作日志面板 ── */
+  .log-panel {
+    width: calc(100vw - 16px);
+    right: 8px;
+    max-height: 50vh;
+  }
+
+  .log-fab {
+    right: 8px;
+    width: 32px;
+    height: 32px;
+    font-size: 14px;
+  }
+
+  /* ── 管理员弹窗 ── */
+  .mb {
+    padding: 18px;
+    max-width: calc(100vw - 32px);
+  }
+
+  /* ── 歌词弹窗 ── */
+  .lyric-modal-cover {
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+  }
+
+  .lyric-modal-name {
+    font-size: .9rem;
+  }
+
+  .lyric-modal-artist {
+    font-size: .76rem;
+  }
+
+  .lyric-modal-line {
+    padding: 6px 0;
+    font-size: .86rem;
+  }
+
+  .lyric-modal-line.active {
+    font-size: .96rem;
+  }
+
+  /* ── 卡片标题 ── */
+  .ch {
+    padding: 10px 12px;
+    font-size: .76rem;
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+
+  /* ── 房间标签 ── */
+  .room-tag {
+    max-width: 100px;
+    font-size: .72rem;
+    padding: 2px 8px;
+  }
+
+  /* ── Toast ── */
+  .toast {
+    max-width: calc(100vw - 32px);
+    font-size: .78rem;
+  }
+
+  /* ── 密码弹窗 ── */
+  .modal-box {
+    width: calc(100vw - 48px);
+    max-width: 340px;
+    padding: 24px 20px;
+  }
+
+  .modal-box .mi {
+    width: 100%;
+  }
+}
+
+/* ════════════════════════════════════════
+   @media max-width: 360px — 超小屏
+   ════════════════════════════════════════ */
+@media (max-width: 360px) {
+  .header-controls {
+    gap: 3px;
+  }
+
+  .logo {
+    font-size: .82rem;
+  }
+
+  .pcover {
+    width: 32px;
+    height: 32px;
+  }
+
+  .pinfo-left {
+    max-width: 80px;
+  }
+}

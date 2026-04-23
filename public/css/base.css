@@ -19,6 +19,13 @@ body {
   pointer-events: none;
 }
 
+#cosmos-canvas {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+
 ::-webkit-scrollbar {
   width: 4px;
 }
